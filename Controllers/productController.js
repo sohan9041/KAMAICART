@@ -5,7 +5,7 @@ import {
   generateProductCode,
   ProductService,
 } from "../Services/productService.js";
-import { client } from "../Config/connectDb.js";
+import { sequelize } from "../Config/connectDb.js";
 import cloudinary from "../Helper/cloudinary.js";
 
 export const ProductController = {

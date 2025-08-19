@@ -1,13 +1,13 @@
 import { findUserByEmailorPhone, Register } from "../Models/userModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { client } from "../Config/connectDb.js";
+import { sequelize  } from "../Config/connectDb.js";
 import otpGenerator from "otp-generator";
 import { sendOTPEmail } from "../Helper/sendEmail.js";
 import { tempUsers } from "../temporaryStorage.js";
 
 export const registerUser = async (name, email, phone, password, role) => {
-  const exisitnguser = await findUserByEmailorPhone(email, client);
+  const exisitnguser = await findUserByEmailorPhone(email, sequelize);
   if (exisitnguser) {
     throw new Error("Email or Phone Allready exists");
   }
@@ -18,11 +18,9 @@ export const registerUser = async (name, email, phone, password, role) => {
     specialChars: false,
   });
 
-  await sendOTPEmail(email, otp);
+ // await sendOTPEmail(email, otp);
 
   const hashed = await bcrypt.hash(password, 10);
-
-  console.log("hashed", hashed);
 
   tempUsers[email] = {
     name,
@@ -34,16 +32,12 @@ export const registerUser = async (name, email, phone, password, role) => {
     expires: Date.now() + 5 * 60000,
   };
 
-  console.log("tempUsers", tempUsers[email]);
-
   return { message: "OTP sent to email" };
   // return await Register(name, email, phone, hashed, client);
 };
 
 export const verifyUserOTP = async (email, userOtp) => {
   const temp = tempUsers[email];
-
-  console.log(temp);
 
   if (!temp) {
     throw new Error("No OTP found. Register again.");
@@ -53,8 +47,6 @@ export const verifyUserOTP = async (email, userOtp) => {
   }
 
   if (temp.otp !== userOtp) throw new Error("Incorrect OTP");
-
-  console.log("33", temp.hased);
 
   const user = await Register(
     temp.name,
@@ -75,7 +67,6 @@ export const loginuser = async (identifier, password) => {
   if (!user) throw new Error("User not found");
 
   const passwordcompare = await bcrypt.compare(password, user.password);
-  console.log(process.env.JWT_SECRET);
 
   if (!passwordcompare) {
     throw new Error("password incorrect");
@@ -113,7 +104,6 @@ export const EmailCheckAndSendOTP = async (email) => {
 };
 
 export const ResetPasswordUser = async (password, email) => {
-  console.log(email);
   try {
     const hashed = await bcrypt.hash(password, 10);
 

@@ -1,34 +1,37 @@
-import { client } from "../Config/connectDb.js";
+import { Op } from "sequelize";
+import { AdminData } from "../Schema/AdminData.js";
 
+// Register new user
 export const Register = async (name, email, phone, role, password) => {
   console.log("Registering user:", name, email, phone, role);
 
-  const result = await client.query(
-    `INSERT INTO admindata (name, email, phoneno, password,role)
-       VALUES ($1, $2, $3, $4,$5)
-RETURNING id, name, email, role`,
-    [name, email, phone, password, role]
-  );
+  const user = await AdminData.create({
+    name,
+    email,
+    phoneno: phone,
+    password,
+    role,
+  });
 
-  return result.rows[0];
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
 };
 
-export const findUserByEmailorPhone = async (identifier, client) => {
-  let query = `
-    SELECT * FROM admindata
-    WHERE (email = $1 OR phoneno = $2)
-  `;
-  let values = [identifier, identifier];
-
-  const result = await client.query(query, values);
-  return result.rows[0];
+// Find user by email or phone
+export const findUserByEmailorPhone = async (identifier) => {
+  return await AdminData.findOne({
+    where: {
+      [Op.or]: [{ email: identifier }, { phoneno: identifier }],
+    },
+  });
 };
 
-export const Updatepassword = async (email, password, client) => {
-  const result = await client.query(
-    `UPDATE admindata SET password = $1 WHERE email = $2`,
-    [password, email]
-  );
-
-  return result.rows[0];
+// Update password
+export const Updatepassword = async (email, password) => {
+  await AdminData.update({ password }, { where: { email } });
+  return await AdminData.findOne({ where: { email } });
 };

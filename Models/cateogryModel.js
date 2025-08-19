@@ -1,4 +1,4 @@
-import { client } from "../Config/connectDb.js";
+import { sequelize } from "../Config/connectDb.js";
 import slugify from "slugify";
 
 const slug = async (name) => {

@@ -1,4 +1,4 @@
-import { client } from "../Config/connectDb.js";
+import { sequelize  } from "../Config/connectDb.js";
 
 export const ProductColour = {
   BulkInsert: async (product_id, colours) => {

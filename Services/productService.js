@@ -1,5 +1,5 @@
 import { Product } from "../Models/productModel.js";
-import { client } from "../Config/connectDb.js"; // PostgreSQL DB instance
+import { sequelize  } from "../Config/connectDb.js"; // PostgreSQL DB instance
 
 export const generateProductCode = async (subSubCategoryId) => {
   const prefix = `SG-${subSubCategoryId}-`;
