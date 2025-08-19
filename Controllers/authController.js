@@ -4,7 +4,7 @@ import {
   verifyUserOTP,
   EmailCheckAndSendOTP,
   ResetPasswordUser,
-} from "../Services/Auth_Service.js";
+} from "../Services/authService.js";
 import { tempUsers } from "../temporaryStorage.js";
 import jwt from "jsonwebtoken";
 

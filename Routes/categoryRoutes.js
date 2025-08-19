@@ -11,11 +11,11 @@ import {
 
 export const Admin_router = express.Router();
 
-Admin_router.post("/Maincategories", AddMainCategory);
-Admin_router.post("/Subcategories", AddSubCategory);
+Admin_router.post("/maincategories", AddMainCategory);
+Admin_router.post("/subcategories", AddSubCategory);
 
 Admin_router.get("/categories/children/:parentId", getChildrenCategoriesData);
-Admin_router.get("/categories/subcategory/", SubCategoriesInfo);
+Admin_router.get("/categories/subcategory", SubCategoriesInfo);
 Admin_router.get("/categories/subsubcategory", SubSubCategoriesInfo);
 
 Admin_router.put("/categories/updatecategory/:id", UpdataCategoriesData);

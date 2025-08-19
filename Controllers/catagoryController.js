@@ -6,7 +6,7 @@ import {
   FetchInfoSubSubCategories,
   UpdateCategory,
   DeleteCategory,
-} from "../Services/Category_Services.js";
+} from "../Services/categoryServices.js";
 
 export const AddMainCategory = async (req, res) => {
   try {

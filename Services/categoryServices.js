@@ -6,7 +6,7 @@ import {
   GetInfoOnlySubSubCategory,
   UpdateCategoryByID,
   DeleteCategoryByID,
-} from "../Models/Cateogry_Model.js";
+} from "../Models/cateogryModel.js";
 
 export const CreateMainCategory = async ({ name }) => {
   if (!name) throw new Error("Category name is required");

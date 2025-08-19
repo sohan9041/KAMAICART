@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { client } from "../Config/connectDb.js";
 import otpGenerator from "otp-generator";
-import { sendOTPEmail } from "../Helper/SendEmail.js";
+import { sendOTPEmail } from "../Helper/sendEmail.js";
 import { tempUsers } from "../temporaryStorage.js";
 
 export const registerUser = async (name, email, phone, password, role) => {

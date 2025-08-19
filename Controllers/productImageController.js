@@ -1,4 +1,4 @@
-import { ProductImageService } from "../Services/ProductImage_Service.js";
+import { ProductImageService } from "../Services/productImageService.js";
 
 export const ProductController = {
   async uploadProductImages(req, res) {

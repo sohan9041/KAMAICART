@@ -1,4 +1,4 @@
-import { ProductSize } from "../Models/ProductSize_Model.js";
+import { ProductSize } from "../Models/productSizeModel.js";
 
 export const ProductSizeService = {
   async CreateSize(product_id, sizes) {

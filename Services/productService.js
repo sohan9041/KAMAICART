@@ -1,4 +1,4 @@
-import { Product } from "../Models/Product_Model.js";
+import { Product } from "../Models/productModel.js";
 import { client } from "../Config/connectDb.js"; // PostgreSQL DB instance
 
 export const generateProductCode = async (subSubCategoryId) => {

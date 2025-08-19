@@ -9,8 +9,8 @@ import {
   resetPassword,
   // Logininfo,
   Logout,
-} from "../Controllers/auth_Controller.js";
-import { verifyUser } from "../MiddleWere/verify_auth_middleware.js";
+} from "../Controllers/authController.js";
+import { verifyUser } from "../Middleware/verifyAuthMiddleware.js";
 
 export const router = express.Router();
 

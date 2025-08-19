@@ -1,4 +1,4 @@
-import { ProductImage } from "../Models/ProductImage_Model.js";
+import { ProductImage } from "../Models/productImageModel.js";
 
 export const ProductImageService = {
   async createImages(product_id, urls) {

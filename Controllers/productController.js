@@ -1,12 +1,12 @@
-import { ProductColourService } from "../Services/ProductColor_Service.js";
-import { ProductImageService } from "../Services/ProductImage_Service.js";
-import { ProductSizeService } from "../Services/ProductSize_Service.js";
+import { ProductColourService } from "../Services/productColorService.js";
+import { ProductImageService } from "../Services/productImageService.js";
+import { ProductSizeService } from "../Services/productSizeService.js";
 import {
   generateProductCode,
   ProductService,
-} from "../Services/Product_Service.js";
+} from "../Services/productService.js";
 import { client } from "../Config/connectDb.js";
-import cloudinary from "../Helper/Cloudinary.js";
+import cloudinary from "../Helper/cloudinary.js";
 
 export const ProductController = {
   async CreateProduct(req, res) {

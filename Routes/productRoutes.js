@@ -1,11 +1,11 @@
 import express from "express";
-import { upload } from "../MiddleWere/Image_Upload_Middleware.js";
-import { ProductController } from "../Controllers/Product_Controller.js";
+import { upload } from "../Middleware/imageUploadMiddleware.js";
+import { ProductController } from "../Controllers/productController.js";
 
 export const ProductRouter = express.Router();
 
 ProductRouter.post(
-  "/Added",
+  "/added",
   upload.array("images", 5),
   ProductController.CreateProduct
 );

@@ -1,4 +1,4 @@
-import { ProductColour } from "../Models/ProductColor_Model.js";
+import { ProductColour } from "../Models/productColorModel.js";
 
 export const ProductColourService = {
   async createColours(product_id, colours) {
