@@ -1,132 +1,227 @@
-import {
-  loginuser,
-  registerUser,
-  verifyUserOTP,
-  EmailCheckAndSendOTP,
-  ResetPasswordUser,
-} from "../Services/authService.js";
-import { tempUsers } from "../temporaryStorage.js";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import apiResponse from "../Helper/apiResponse.js";
+import {
+  User,
+  Register,
+  findUserByEmailorPhone,
+  Updatepassword,
+} from "../Models/userModel.js";
 
+// Temporary OTP store
+const tempUsers = {};
+
+// ✅ Signup
 export const Signup = async (req, res) => {
-  const { name, email, phone, password, role } = req.body;
-
   try {
-    const user = await registerUser(name, email, phone, password, role);
-    res.status(201).json({ Message: "Signup SuccessFull", user });
-  } catch (error) {
-    console.error("Signup error:", error);
-    res.status(400).json({ message: error.message });
+    const { name, email, phone, password, role } = req.body;
+    if (!name || !email || !phone || !password || !role) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "All fields are required",
+        { name, email, phone, role }
+      );
+    }
+
+    const existingUser = await findUserByEmailorPhone(email);
+    if (existingUser)
+      return apiResponse.validationErrorWithData(
+        res,
+        "Email or phone already exists",
+        { email }
+      );
+
+    const hashed = await bcrypt.hash(password, 10);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    tempUsers[email] = {
+      name,
+      email,
+      phone,
+      hashed,
+      role,
+      otp,
+      expires: Date.now() + 5 * 60 * 1000,
+    };
+
+    await Register(name, email, phone, hashed, role);
+
+    return apiResponse.successResponseWithData(res, "OTP sent successfully", {
+      email,
+      otp,
+    });
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
   }
 };
 
+// ✅ Verify OTP
 export const VerifyOtp = async (req, res) => {
   const { email, otp } = req.body;
-  try {
+  const tempUser = tempUsers[email];
 
-    const user = await verifyUserOTP(email, otp);
-
-    res.json({ message: "User verified and registered", user });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  if (!tempUser || tempUser.otp !== otp || tempUser.expires < Date.now()) {
+    return apiResponse.validationErrorWithData(res, "Invalid or expired OTP", {
+      email,
+    });
   }
+
+  await User.update({ isVerified: true }, { where: { email } });
+  delete tempUsers[email];
+
+  return apiResponse.successResponseWithData(
+    res,
+    "User verified successfully",
+    { email }
+  );
 };
 
+// ✅ Signin
 export const Signin = async (req, res) => {
-  const { identifier, password } = req.body;
-
   try {
-    const token = await loginuser(identifier, password);
+    const { identifier, password } = req.body;
+    const user = await findUserByEmailorPhone(identifier);
+    if (!user) return apiResponse.notFoundResponse(res, "User not found");
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch)
+      return apiResponse.validationErrorWithData(
+        res,
+        "Password incorrect",
+        null
+      );
+
+    const token = jwt.sign(
+      { id: user.id, name: user.name, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return apiResponse.successResponseWithData(res, "Login successful", {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
-
-    res.cookie("_is_logged_in_", "1", {
-      httpOnly: false, // Frontend can access this
-      secure: true,
-      sameSite: "Lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    res.json({ message: "Login successful", token: token });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
   }
 };
 
-export const sentresetpassOTP = async (req, res) => {
+// ✅ Reset Password Flow
+export const sendResetPassOTP = async (req, res) => {
   const { email } = req.body;
-  try {
-    const result = await EmailCheckAndSendOTP(email);
-    return res.json({ message: "Send OTP via Email" });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+  const user = await findUserByEmailorPhone(email);
+  if (!user) return apiResponse.notFoundResponse(res, "User not found");
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  tempUsers[email] = { otp, expires: Date.now() + 5 * 60 * 1000 };
+  return apiResponse.successResponseWithData(res, "OTP sent", { email, otp });
 };
 
 export const verifyResetOTP = async (req, res) => {
   const { email, otp } = req.body;
-  const user = tempUsers[email];
-
-  if (user.otp !== otp || user.expires < Date.now()) {
-    return res.status(400).json({ message: "Invalid or expired OTP" });
+  const tempUser = tempUsers[email];
+  if (!tempUser || tempUser.otp !== otp || tempUser.expires < Date.now()) {
+    return apiResponse.validationErrorWithData(res, "Invalid or expired OTP", {
+      email,
+    });
   }
-
-  res.json({ message: "OTP verified" });
+  return apiResponse.successResponseWithData(res, "OTP verified", { email });
 };
 
 export const resetPassword = async (req, res) => {
   const { email, password } = req.body;
+  const tempUser = tempUsers[email];
+  if (!tempUser || tempUser.expires < Date.now())
+    return apiResponse.validationErrorWithData(
+      res,
+      "OTP expired or not verified",
+      { email }
+    );
 
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and new password required" });
-  }
-  const user = tempUsers[email];
-  try {
-    if (!user || user.expires < Date.now()) {
-      return res.status(400).json({ message: "OTP expired or not verified" });
-    }
-    const result = await ResetPasswordUser(password, email);
+  const hashed = await bcrypt.hash(password, 10);
+  await Updatepassword(email, hashed);
+  delete tempUsers[email];
 
-    delete tempUsers[email];
-
-    return res.json({ message: "Password SuccesFully Update" });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+  return apiResponse.successResponseWithData(
+    res,
+    "Password updated successfully",
+    { email }
+     );
 };
 
-
+// ✅ Profile
 export const profile = async (req, res) => {
-  const token = req.cookies.token;
-
-  if (!token) return res.status(401).json({ message: "Not logged in" });
-
   try {
-    const user = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = req.user;
+    const user = await User.findOne({
+      where: { id: decoded.id },
+      attributes: { exclude: ["password"] },
+    });
+    if (!user) return apiResponse.notFoundResponse(res, "User not found");
 
-    res.json({ message: "Welcome", user });
-  } catch {
-    res.status(403).json({ message: "Invalid Token" });
+    return apiResponse.successResponseWithData(res, "Profile fetched", user);
+  } catch (err) {
+    console.log(err);
+    return apiResponse.forbiddenResponse(res, "Invalid or expired token");
   }
 };
 
+// ✅ Logout
 export const Logout = (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-  });
+  res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "lax" });
+  return apiResponse.successResponseWithData(
+    res,
+    "Logged out successfully",
+    null
+  );
+};
 
-  res.clearCookie("_is_logged_in_", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-  });
+export const getSellers = async (req, res) => {
+  try {
+    const sellers = await User.findAll({
+      where: { role: "seller" },
+      attributes: ["id", "name", "email", "phoneno"], // only safe fields
+    });
 
-  res.json({ message: "Logged out" });
+    if (!sellers || sellers.length === 0) {
+      return apiResponse.notFoundResponse(res, "No sellers found",[]);
+    }
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Sellers fetched successfully",
+      sellers
+    );
+  } catch (error) {
+    console.error("Error fetching sellers:", error);
+    return apiResponse.ErrorResponse(res, "Failed to fetch sellers", error.message);
+  }
+};
+
+// ✅ Get Customers
+export const getCustomers = async (req, res) => {
+  try {
+    const customers = await User.findAll({
+      where: { role: "customer" },
+      attributes: ["id", "name", "email", "phoneno"], // only safe fields
+    });
+
+    if (!customers || customers.length === 0) {
+      return apiResponse.notFoundResponse(res, "No customers found");
+    }
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Customers fetched successfully",
+      customers
+    );
+  } catch (error) {
+    console.error("Error fetching customers:", error);
+    return apiResponse.ErrorResponse(res, "Failed to fetch customers", error.message);
+  }
 };

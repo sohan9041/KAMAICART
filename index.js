@@ -9,6 +9,12 @@ import { connectDB } from "./Config/connectDb.js";
 import { router } from "./Routes/authRoutes.js";
 import { Admin_router } from "./Routes/categoryRoutes.js";
 import { ProductRouter } from "./Routes/productRoutes.js";
+import generalSettingRoute from "./Routes/generalSettingRoute.js";
+import roleRoutes from "./Routes/roleRoutes.js";
+import roleFeatureRoutes from "./Routes/roleFeatureRoutes.js";
+import whyChooseRoute from "./Routes/whyChooseRoute.js";
+
+
 const app = express();
 app.use(cookieParser());
 dotenv.config();
@@ -19,6 +25,10 @@ app.use(express.json());
 app.use("/product", ProductRouter);
 app.use("/auth", router);
 app.use("/admin", Admin_router);
+app.use("/generalSetting", generalSettingRoute);
+app.use("/roles", roleRoutes);
+app.use("/roleFeature", roleFeatureRoutes);
+app.use("/whyChoose", whyChooseRoute);
 app.use(morgan("dev"));
 app.use(
   helmet({
