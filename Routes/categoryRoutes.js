@@ -1,23 +1,47 @@
 import express from "express";
 import {
-  AddMainCategory,
-  AddSubCategory,
-  DeleteCategoriesData,
-  getChildrenCategoriesData,
-  SubCategoriesInfo,
-  SubSubCategoriesInfo,
-  UpdataCategoriesData,
-} from "../Controllers/CatagoryController.js";
+  createMainCategory,
+  createSubCategory,
+  getCategories,
+  getSubCategories,
+  getSubSubCategories,
+  updateCategory,
+  deleteCategory,
+} from "../Controllers/catagoryController.js";
+import { verifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { uploadCategoryImage } from "../Middleware/imageUploadMiddleware.js";
 
-export const Admin_router = express.Router();
+const router = express.Router();
 
-Admin_router.post("/maincategories", AddMainCategory);
-Admin_router.post("/subcategories", AddSubCategory);
+// ✅ Create
+router.post(
+  "/main",
+  verifyUser,
+  uploadCategoryImage.single("image"), // Add image upload
+  createMainCategory
+);
 
-Admin_router.get("/categories/children/:parentId", getChildrenCategoriesData);
-Admin_router.get("/categories/subcategory", SubCategoriesInfo);
-Admin_router.get("/categories/subsubcategory", SubSubCategoriesInfo);
+router.post(
+  "/sub",
+  verifyUser,
+  uploadCategoryImage.single("image"), // Add image upload
+  createSubCategory
+);
 
-Admin_router.put("/categories/updatecategory/:id", UpdataCategoriesData);
+// ✅ Get
+router.get("/", verifyUser, getCategories); // ?parent_id=null OR ?parent_id=1
+router.get("/sub", verifyUser, getSubCategories);
+router.get("/sub-sub", verifyUser, getSubSubCategories);
 
-Admin_router.delete("/categories/deletecategory/:id", DeleteCategoriesData);
+// ✅ Update
+router.put(
+  "/:id",
+  verifyUser,
+  uploadCategoryImage.single("image"), // Allow updating image
+  updateCategory
+);
+
+// ✅ Delete
+router.delete("/:id", verifyUser, deleteCategory);
+
+export default router;

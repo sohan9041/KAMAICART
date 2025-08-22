@@ -1,83 +1,90 @@
 import {
-  CreateMainCategory,
-  FetchInfoCategories,
-  CreateSubCategory,
-  FetchInfoSubCategories,
-  FetchInfoSubSubCategories,
-  UpdateCategory,
-  DeleteCategory,
-} from "../Services/categoryServices.js";
+  InsertMainCategory,
+  InsertSubCategory,
+  GetInfoFromCategoriesData,
+  GetInfoOnlySubCategory,
+  GetInfoOnlySubSubCategory,
+  UpdateCategoryByID,
+  DeleteCategoryByID,
+} from "../Models/cateogryModel.js"; // adjust path if needed
+import apiResponse from "../Helper/apiResponse.js";
 
-export const AddMainCategory = async (req, res) => {
+// ✅ Create Main Category with Image
+export const createMainCategory = async (req, res) => {
   try {
-    const category = await CreateMainCategory(req.body);
-    res.status(201).json({ message: "Category created", category });
-  } catch (error) {
-    console.error("Add category error:", error.message);
-    res.status(400).json({ message: error.message });
+    const { name } = req.body;
+    const image = req.file ? `/uploads/category/${req.file.filename}` : null; // Get uploaded image filename
+
+    const record = await InsertMainCategory({ name, image });
+    return apiResponse.successResponseWithData(res, "Main Category created", record);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
   }
 };
 
-export const AddSubCategory = async (req, res) => {
+// ✅ Create Sub Category with Image
+export const createSubCategory = async (req, res) => {
   try {
     const { name, parent_id } = req.body;
+    const image = req.file ? `/uploads/category/${req.file.filename}` : null; // Get uploaded image filename
 
-    const category = await CreateSubCategory({ name, parent_id });
-
-    res.status(201).json({ message: "Category created", category });
-  } catch (error) {
-    console.error("Add category error:", error.message);
-    res.status(400).json({ message: error.message });
+    const record = await InsertSubCategory({ name, parent_id, image });
+    return apiResponse.successResponseWithData(res, "Sub Category created", record);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
   }
 };
 
-export const getChildrenCategoriesData = async (req, res) => {
-  const { parentId } = req.params;
+
+// ✅ Get All (by parent_id)
+export const getCategories = async (req, res) => {
   try {
-    const categories = await FetchInfoCategories(parentId);
-    res.status(200).json({ categories: categories });
-  } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    const parent_id = req.query.parent_id || "null";
+    const records = await GetInfoFromCategoriesData(parent_id);
+    return apiResponse.successResponseWithData(res, "Fetched successfully", records);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
   }
 };
 
-export const SubCategoriesInfo = async (req, res) => {
+// ✅ Get Only Sub Categories
+export const getSubCategories = async (req, res) => {
   try {
-    const categories = await FetchInfoSubCategories();
-    res.status(200).json({ Subcategories: categories });
-  } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    const records = await GetInfoOnlySubCategory();
+    return apiResponse.successResponseWithData(res, "Fetched successfully", records);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
   }
 };
 
-export const SubSubCategoriesInfo = async (req, res) => {
+// ✅ Get Only Sub-Sub Categories
+export const getSubSubCategories = async (req, res) => {
   try {
-    const categories = await FetchInfoSubSubCategories();
-    res.status(200).json({ Subsubcategory: categories });
-  } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    const records = await GetInfoOnlySubSubCategory();
+    return apiResponse.successResponseWithData(res, "Fetched successfully", records);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
   }
 };
 
-export const UpdataCategoriesData = async (req, res) => {
-  const { id } = req.params;
-  const { name } = req.body;
-
+// ✅ Update Category
+export const updateCategory = async (req, res) => {
   try {
-    const categories = await UpdateCategory({ name, id });
-    res.status(200).json({ message: "Category updated", category: categories });
-  } catch (error) {
-    res.status(500).json({ message: "Something Went Wrong Plz Try Again" });
+    const { id, name } = req.body;
+    const record = await UpdateCategoryByID({ id, name });
+    return apiResponse.successResponseWithData(res, "Updated successfully", record);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
   }
 };
 
-export const DeleteCategoriesData = async (req, res) => {
-  const { id } = req.params;
-
+// ✅ Delete Category
+export const deleteCategory = async (req, res) => {
   try {
-    const categories = await DeleteCategory(id);
-    res.status(200).json({ message: "Category deleted", category: categories });
-  } catch (error) {
-    res.status(500).json({ message: "Something Went Wrong Plz Try Again" });
+    const id = req.params.id;
+    const record = await DeleteCategoryByID(id);
+    return apiResponse.successResponseWithData(res, "Deleted successfully", { id: record });
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
   }
 };

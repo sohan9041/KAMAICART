@@ -1,25 +1,21 @@
+// Routes/productRoutes.js
 import express from "express";
-import { upload } from "../Middleware/imageUploadMiddleware.js";
-import { ProductController } from "../Controllers/productController.js";
+import {
+  addProduct,
+  getProducts,
+  getProduct,
+  updateProductById,
+  deleteProductById,
+} from "../Controllers/productController.js";
+import { verifyUser } from "../Middleware/verifyAuthMiddleware.js";
 
-export const ProductRouter = express.Router();
+const router = express.Router();
 
-ProductRouter.post(
-  "/added",
-  upload.array("images", 5),
-  ProductController.CreateProduct
-);
+// Product Routes
+router.post("/", verifyUser, addProduct);
+router.get("/", verifyUser, getProducts);
+router.get("/:id", verifyUser, getProduct);
+router.put("/:id", verifyUser, updateProductById);
+router.delete("/:id", verifyUser, deleteProductById);
 
-ProductRouter.get("/category", ProductController.getProductsByCategory); // all
-ProductRouter.get(
-  "/category/:category_id",
-  ProductController.getProductsByCategory
-);
-
-ProductRouter.get("/info/:id", ProductController.editProductByCategory);
-
-ProductRouter.put(
-  "/update/:id",
-  upload.any(),
-  ProductController.UpdateProductByCategory
-);
+export default router;

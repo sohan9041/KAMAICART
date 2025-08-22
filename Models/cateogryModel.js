@@ -1,92 +1,127 @@
-import { sequelize } from "../Config/connectDb.js";
 import slugify from "slugify";
+import Category from "../Schema/category.js";
 
-const slug = async (name) => {
-  if (!name || typeof name !== "string")
-    throw new Error("slug name is required");
-  const slug = slugify(name, { lower: true }); // → women-ethnic
+const slug = (name) => {
+  if (!name || typeof name !== "string") throw new Error("slug name is required");
+  const slug = slugify(name, { lower: true });
   const unique_code = name.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
   return { slug, unique_code };
 };
 
+// ✅ Insert Main Category
 export const InsertMainCategory = async (name) => {
   if (!name) throw new Error("Category name is required");
+  const { slug: slugName, unique_code,image } = slug(name);
 
-  console.log(name);
-  const data = await slug(name);
+  const category = await Category.create({
+    name,
+    slug: slugName,
+    image:image,
+    unique_code,
+    parent_id: null,
+  });
 
-  const query = `
-    INSERT INTO categories (name, slug, unique_code, parent_id)
-    VALUES ($1, $2, $3, $4)
-    RETURNING *`;
-  const values = [name, data.slug, data.unique_code, null];
-  const result = await client.query(query, values);
-  return result.rows[0];
+  return category;
 };
 
-export const InsertSubCategory = async (data) => {
-  const { name, parent_id } = data;
+// ✅ Insert Sub Category
+export const InsertSubCategory = async ({ name, parent_id }) => {
   if (!name) throw new Error("Category name is required");
+  const { slug: slugName, unique_code,image } = slug(name);
 
-  const data1 = await slug(name);
+  const category = await Category.create({
+    name,
+    image:image,
+    slug: slugName,
+    unique_code,
+    parent_id,
+  });
 
-  const query = `
-    INSERT INTO categories (name, slug, unique_code, parent_id)
-    VALUES ($1, $2, $3, $4)
-    RETURNING *`;
-  const values = [name, data1.slug, data1.unique_code, parent_id];
-  const result = await client.query(query, values);
-  return result.rows[0];
+  return category;
 };
 
+// ✅ Get All Categories (by parent_id)
 export const GetInfoFromCategoriesData = async (parent_id) => {
-  const query =
-    parent_id === "null"
-      ? "SELECT * FROM categories WHERE parent_id IS NULL ORDER BY id"
-      : "SELECT * FROM categories WHERE parent_id = $1 ORDER BY id";
-  const values = parent_id === "null" ? [] : [parent_id];
-  const { rows } = await client.query(query, values);
-  return rows;
+  const baseUrl = process.env.BASE_URL || "";
+
+  const whereCondition =
+    parent_id === "null" ? { parent_id: null,is_delete:false } : { parent_id,is_delete:false };
+
+  const categories = await Category.findAll({
+    where: whereCondition,
+    order: [["id", "ASC"]],
+  });
+
+  // Add image path dynamically
+  return categories.map((cat) => ({
+    ...cat.toJSON(),
+    image: cat.image ? `${baseUrl}${cat.image}` : null,
+  }));
 };
 
+
+// ✅ Only Sub Categories (direct children of root)
 export const GetInfoOnlySubCategory = async () => {
-  const query =
-    "SELECT c.*FROM categories c JOIN categories p ON c.parent_id = p.id WHERE p.parent_id IS NULL;";
+  const baseUrl = process.env.BASE_URL || "";
+  const subcategories= await Category.findAll({
+    include: [{
+      model: Category,
+      as: "parent",
+      where: { parent_id: null,is_delete:false },
+    }],
+  });
 
-  const { rows } = await client.query(query);
-  return rows;
+   return subcategories.map((cat) => ({
+    ...cat.toJSON(),
+    image: cat.image ? `${baseUrl}${cat.image}` : null,
+  }));
 };
 
+// ✅ Only Sub-Sub Categories
 export const GetInfoOnlySubSubCategory = async () => {
-  const query =
-    "SELECT c.*FROM categories c JOIN categories p ON c.parent_id = p.id WHERE p.parent_id IS NOT NULL;";
+  const baseUrl = process.env.BASE_URL || "";
+   const subsubcategories=  await Category.findAll({
+    include: [{
+      model: Category,
+      as: "parent",
+      where: { parent_id: { [Op.ne]: null },is_delete:false },
+    }],
+  });
 
-  const { rows } = await client.query(query);
-  return rows;
+  return subsubcategories.map((cat) => ({
+    ...cat.toJSON(),
+    image: cat.image ? `${baseUrl}${cat.image}` : null,
+  }));
 };
 
-export const UpdateCategoryByID = async (data) => {
-  const { name, id } = data;
-  const id1 = id ? id : null;
+// ✅ Update Category
+export const UpdateCategoryByID = async ({ id, name }) => {
+  if (!id || !name) throw new Error("ID and Name are required");
+  const { slug: slugName, unique_code } = slug(name);
 
-  const query = `
-    UPDATE categories
-    SET name = $1, slug = $2, unique_code = $3
-    WHERE id = $4
-    RETURNING *;
-  `;
+  const [updated] = await Category.update(
+    { name, slug: slugName, unique_code },
+    { where: { id }, returning: true }
+  );
 
-  const dataslug = await slug(name);
-  const values = [name, dataslug.slug, dataslug.unique_code, id1];
-  const result = await client.query(query, values);
-  return result.rows[0];
+  if (!updated) throw new Error("Category not found");
+
+  return await Category.findByPk(id);
 };
 
+// ✅ Delete Category
 export const DeleteCategoryByID = async (id) => {
-  const query = `DELETE FROM categories WHERE id = $1`;
+  const category = await Category.findByPk(id);
+  if (!category) {
+    throw new Error("Category not found");
+  }
 
-  const values = [id];
-  await client.query(query, values);
+  // Soft delete
+  category.is_delete = true;
+  await category.save();
 
-  return id;
+  return category;
 };
+
+
+export { Category };

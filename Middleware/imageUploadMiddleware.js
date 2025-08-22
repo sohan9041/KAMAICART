@@ -81,7 +81,23 @@ const fileFilterForRole = (req, file, cb) => {
   }
 };
 
+const Category = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, "../uploads/category");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  },
+});
+
 // ✅ Final upload middleware
+export const uploadCategoryImage = multer({ storage: Category, fileFilterForRole });
+
 export const uploadIcon = multer({ storage: Icon, fileFilterForRole });
 
 export const uploadSettingsImage = multer({ storageSetting, fileFilter });
