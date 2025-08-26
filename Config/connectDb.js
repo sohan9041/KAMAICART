@@ -5,12 +5,12 @@ dotenv.config();
 
 // Create Sequelize instance
 export const sequelize = new Sequelize(
-  process.env.DATABASE,  // database name
-  process.env.USER,      // username
-  process.env.PASSWORD,  // password
+  process.env.DB_DATABASE,  // database name
+  process.env.DB_USER,      // username
+  process.env.DB_PASSWORD,  // password
   {
-    host: process.env.HOST,
-    port: process.env.DBPORT,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
     dialect: "postgres",
     logging: false, // disable SQL logs in console
   }

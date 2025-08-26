@@ -1,11 +1,14 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import apiResponse from "../Helper/apiResponse.js";
+import appapiResponse from "../Helper/appapiResponse.js";
 import {
   User,
   Register,
   findUserByEmailorPhone,
+  findUserByEmailorPhoneByApp,
   Updatepassword,
+  AppRegister
 } from "../Models/userModel.js";
 
 // Temporary OTP store
@@ -14,41 +17,83 @@ const tempUsers = {};
 // ✅ Signup
 export const Signup = async (req, res) => {
   try {
-    const { name, email, phone, password, role } = req.body;
-    if (!name || !email || !phone || !password || !role) {
+    const { name, email, phone, password, role_id } = req.body;
+
+    if (!name || !email || !phone || !password || !role_id) {
       return apiResponse.validationErrorWithData(
         res,
         "All fields are required",
-        { name, email, phone, role }
+        { name, email, phone, role_id }
       );
     }
 
-    const existingUser = await findUserByEmailorPhone(email);
-    if (existingUser)
+    const existingUser = await findUserByEmailorPhoneByApp(email,phone);
+    if (existingUser) {
       return apiResponse.validationErrorWithData(
         res,
         "Email or phone already exists",
-        { email }
+        { email,phone }
       );
+    }
 
     const hashed = await bcrypt.hash(password, 10);
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    tempUsers[email] = {
-      name,
-      email,
-      phone,
-      hashed,
-      role,
-      otp,
-      expires: Date.now() + 5 * 60 * 1000,
-    };
+    // Save user in DB
+    const user = await Register(name, email, phone, hashed, role_id);
 
-    await Register(name, email, phone, hashed, role);
+    // Generate JWT
+    const token = jwt.sign(
+      { id: user.id, name: user.name, email: user.email, role: user.role_id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    return apiResponse.successResponseWithData(res, "OTP sent successfully", {
-      email,
-      otp,
+    return apiResponse.successResponseWithData(res, "Signup successful", {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role_id,
+      },
+    });
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+
+// ✅ Signin
+export const Signin = async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+    const user = await findUserByEmailorPhone(identifier);
+    if (!user) return apiResponse.notFoundResponse(res, "User not found");
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch)
+      return apiResponse.validationErrorWithData(
+        res,
+        "Password incorrect",
+        null
+      );
+
+    const token = jwt.sign(
+      { id: user.id, name: user.name, email: user.email, role: user.role_id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return apiResponse.successResponseWithData(res, "Login successful", {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phoneno,
+        role: user.role_id,
+      },
     });
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
@@ -76,40 +121,7 @@ export const VerifyOtp = async (req, res) => {
   );
 };
 
-// ✅ Signin
-export const Signin = async (req, res) => {
-  try {
-    const { identifier, password } = req.body;
-    const user = await findUserByEmailorPhone(identifier);
-    if (!user) return apiResponse.notFoundResponse(res, "User not found");
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch)
-      return apiResponse.validationErrorWithData(
-        res,
-        "Password incorrect",
-        null
-      );
-
-    const token = jwt.sign(
-      { id: user.id, name: user.name, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    return apiResponse.successResponseWithData(res, "Login successful", {
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (err) {
-    return apiResponse.ErrorResponse(res, err.message);
-  }
-};
 
 // ✅ Reset Password Flow
 export const sendResetPassOTP = async (req, res) => {
@@ -223,5 +235,124 @@ export const getCustomers = async (req, res) => {
   } catch (error) {
     console.error("Error fetching customers:", error);
     return apiResponse.ErrorResponse(res, "Failed to fetch customers", error.message);
+  }
+};
+
+
+// ✅ Signup (Direct login after register)
+export const AppSignup = async (req, res) => {
+  try {
+    const { name, email, phone, password } = req.body;
+    if (!name || !email || !phone || !password) {
+      return appapiResponse.validationErrorWithData(
+        res,
+        "All fields are required",
+        { name, email, phone }
+      );
+    }
+
+    // check duplicate user
+    const existingUser = await findUserByEmailorPhoneByApp(email,phone);
+    if (existingUser) {
+      return appapiResponse.validationErrorWithData(
+        res,
+        "Email or phone already exists",
+        { email,phone }
+      );
+    }
+
+    // hash password
+    const hashed = await bcrypt.hash(password, 10);
+
+    // register user in DB
+    const user = await AppRegister(name, email, phone, hashed, 4);
+
+    // generate JWT token immediately after signup
+    const token = jwt.sign(
+      { id: user.id, name: user.name, email: user.email, role: user.role_id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return appapiResponse.successResponseWithData(res, "Signup successful", {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role_id,
+      },
+    });
+  } catch (err) {
+    return appapiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+
+// ✅ Signin
+export const AppSignin = async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+    const user = await findUserByEmailorPhone(identifier);
+    if (!user) return appapiResponse.notFoundResponse(res, "User not found");
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch)
+      return appapiResponse.validationErrorWithData(
+        res,
+        "Password incorrect",
+        null
+      );
+
+    const token = jwt.sign(
+      { id: user.id, name: user.name, email: user.email, role: user.role_id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return appapiResponse.successResponseWithData(res, "Login successful", {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phoneno,
+        role: user.role_id,
+      },
+    });
+  } catch (err) {
+    return appapiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+// ✅ Logout
+export const AppLogout = (req, res) => {
+  return appapiResponse.successResponseWithData(
+    res,
+    "Logged out successfully",
+    null
+  );
+};
+
+// ✅ Profile
+export const AppProfile = async (req, res) => {
+  try {
+    const decoded = req.user;
+    const user = await User.findOne({
+      where: { id: decoded.id },
+      attributes: { exclude: ["password"] },
+    });
+    if (!user) return appapiResponse.notFoundResponse(res, "User not found");
+
+    return appapiResponse.successResponseWithData(res, "Profile fetched",  {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phoneno,
+        role: user.role_id,
+      });
+  } catch (err) {
+    return appapiResponse.forbiddenResponse(res, "Invalid or expired token");
   }
 };

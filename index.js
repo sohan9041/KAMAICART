@@ -8,6 +8,7 @@ import helmet from "helmet";
 import { connectDB } from "./Config/connectDb.js";
 import { router } from "./Routes/authRoutes.js";
 
+import apiRoutes from "./Routes/apiRoutes.js";
 import productRoutes from "./Routes/productRoutes.js";
 import generalSettingRoute from "./Routes/generalSettingRoute.js";
 import roleRoutes from "./Routes/roleRoutes.js";
@@ -16,6 +17,7 @@ import whyChooseRoute from "./Routes/whyChooseRoute.js";
 import categoryRoutes from "./Routes/categoryRoutes.js";
 import attributeRoutes from "./Routes/attributeRoutes.js";
 import productVariantRoutes from "./Routes/productVariantRoutes.js";
+import bannerRoutes from "./Routes/bannerRoutes.js";
 
 const app = express();
 app.use(cookieParser());
@@ -25,6 +27,7 @@ app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 
 app.use("/product", productRoutes);
+app.use("/user", apiRoutes);
 app.use("/auth", router);
 app.use("/categories", categoryRoutes);
 app.use("/generalSetting", generalSettingRoute);
@@ -33,6 +36,7 @@ app.use("/roleFeature", roleFeatureRoutes);
 app.use("/whyChoose", whyChooseRoute);
 app.use("/attribute", attributeRoutes);
 app.use("/productVariant", productVariantRoutes);
+app.use("/banner", bannerRoutes);
 app.use(morgan("dev"));
 app.use(
   helmet({
