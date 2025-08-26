@@ -319,6 +319,7 @@ export const AppSignin = async (req, res) => {
         email: user.email,
         phone: user.phoneno,
         role: user.role_id,
+        profileImage:process.env.BASE_URL + user.profileImage
       },
     });
   } catch (err) {
@@ -351,8 +352,39 @@ export const AppProfile = async (req, res) => {
         email: user.email,
         phone: user.phoneno,
         role: user.role_id,
+        profileImage:process.env.BASE_URL + user.profileImage
       });
   } catch (err) {
     return appapiResponse.forbiddenResponse(res, "Invalid or expired token");
+  }
+};
+
+export const uploadUserImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return appapiResponse.ErrorResponse(res, "No file uploaded");
+    }
+
+    const decoded = req.user;
+    const user = await User.findOne({ where: { id: decoded.id } });
+
+    if (!user) {
+      return appapiResponse.notFoundResponse(res, "User not found");
+    }
+
+    // Save image path in DB
+    user.profileImage = `/uploads/user/${req.file.filename}`;
+    await user.save();
+
+    return appapiResponse.successResponseWithData(res, "Profile image uploaded", {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phoneno,
+      role: user.role_id,
+      profileImage: user.profileImage,
+    });
+  } catch (error) {
+    return appapiResponse.ErrorResponse(res, "Something went wrong");
   }
 };

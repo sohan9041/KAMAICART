@@ -95,7 +95,23 @@ const Category = multer.diskStorage({
   },
 });
 
+const profileImage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, "../uploads/user");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  },
+});
+
 // ✅ Final upload middleware
+export const uploadProfileImage = multer({ storage: profileImage, fileFilterForRole });
+
 export const uploadCategoryImage = multer({ storage: Category, fileFilterForRole });
 
 export const uploadIcon = multer({ storage: Icon, fileFilterForRole });

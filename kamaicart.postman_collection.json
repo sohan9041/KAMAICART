@@ -1,0 +1,2319 @@
+{
+	"info": {
+		"_postman_id": "6b545ac9-f7c1-40ca-98ac-86a8d1340052",
+		"name": "kamaicart",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "35100656",
+		"_collection_link": "https://web777-9042.postman.co/workspace/web-Workspace~4fb62182-57d2-4631-82a9-a130b83bf8cb/collection/35100656-6b545ac9-f7c1-40ca-98ac-86a8d1340052?action=share&source=collection_link&creator=35100656"
+	},
+	"item": [
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "role",
+					"item": [
+						{
+							"name": "role",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Customer",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "Focus on token investments and portfolio management",
+											"type": "text"
+										},
+										{
+											"key": "button_text",
+											"value": "Start Shopping",
+											"type": "text"
+										},
+										{
+											"key": "icon",
+											"type": "file",
+											"src": "/C:/Users/Lenovo/Downloads/Bootslander/Bootslander/assets/img/details-4.png"
+										},
+										{
+											"key": "features[]",
+											"value": "Full platform management",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roles",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roles"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roles",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roles"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "for customer",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roles/get",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roles",
+										"get"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Token Trader",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "Focus on token investments and portfolio management",
+											"type": "text"
+										},
+										{
+											"key": "button_text",
+											"value": "Start Token Trading",
+											"type": "text"
+										},
+										{
+											"key": "features[]",
+											"value": "Full platform management",
+											"type": "text"
+										},
+										{
+											"key": "icon",
+											"type": "file",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roles/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roles",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "getbyId",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roles/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roles",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "delete",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roles/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roles",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "roleFeature",
+					"item": [
+						{
+							"name": "roleFeature",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"feature\": \"View Dashboard\",\r\n  \"role_id\": 1\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roleFeature",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roleFeature"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roleFeature",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roleFeature"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"id\": 5,\r\n  \"feature\": \"Manage Users\",\r\n  \"role_id\": 1\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roleFeature/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roleFeature",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "getbyId",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roleFeature/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roleFeature",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "getbyRoleId",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roleFeature/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roleFeature",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "delete",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/roleFeature/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"roleFeature",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "whyChoose",
+					"item": [
+						{
+							"name": "whyChoose",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "title",
+											"value": "Best Doctors",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "We have highly experienced doctors in our team.",
+											"type": "text"
+										},
+										{
+											"key": "icon",
+											"type": "file",
+											"src": "/C:/Users/Lenovo/Downloads/Bootslander/Bootslander/assets/img/details-4.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{kamaicart}}/whyChoose",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"whyChoose"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "whyChoose Copy",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "title",
+											"value": "Best Doctors",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "We have highly experienced doctors in our team.",
+											"type": "text"
+										},
+										{
+											"key": "icon",
+											"type": "file",
+											"src": "/C:/Users/Lenovo/Downloads/Bootslander/Bootslander/assets/img/details-4.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{kamaicart}}/whyChoose",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"whyChoose"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/whyChoose",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"whyChoose"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get Copy",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/whyChoose",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"whyChoose"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "for customer",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/whyChoose/get",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"whyChoose",
+										"get"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "for customer Copy",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/whyChoose/get",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"whyChoose",
+										"get"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "title",
+											"value": "Best Doctors",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "We have highly experienced doctors in our team.",
+											"type": "text"
+										},
+										{
+											"key": "icon",
+											"type": "file",
+											"src": "/C:/Users/Lenovo/Downloads/Bootslander/Bootslander/assets/img/details-3.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{kamaicart}}/whyChoose/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"whyChoose",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update Copy",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "title",
+											"value": "Best Doctors",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "We have highly experienced doctors in our team.",
+											"type": "text"
+										},
+										{
+											"key": "icon",
+											"type": "file",
+											"src": "/C:/Users/Lenovo/Downloads/Bootslander/Bootslander/assets/img/details-3.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{kamaicart}}/whyChoose/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"whyChoose",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "delete",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/whyChoose/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"whyChoose",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "delete Copy",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/whyChoose/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"whyChoose",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Banner",
+					"item": [
+						{
+							"name": "add",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "image",
+											"type": "file",
+											"src": "/C:/Users/Lenovo/Downloads/banner_image_1.png"
+										},
+										{
+											"key": "type",
+											"value": "app",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{kamaicart}}/banner/",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"banner",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/banner/",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"banner",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get for web",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/banner/web",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"banner",
+										"web"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "delete",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{kamaicart}}/banner/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"banner",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Category",
+					"item": [
+						{
+							"name": "Create Main Category",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": "/C:/Users/Lenovo/Downloads/amzio-24-02/public/logo192.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{kamaicart}}/categories/main",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"categories",
+										"main"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Sub Category",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Mobiles\",\n  \"parent_id\": 1\n}"
+								},
+								"url": {
+									"raw": "{{kamaicart}}/categories/sub",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"categories",
+										"sub"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Categories (by parent_id=null)",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/categories?parent_id=null",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"categories"
+									],
+									"query": [
+										{
+											"key": "parent_id",
+											"value": "null"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Categories (by parent_id=1)",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/categories?parent_id=1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"categories"
+									],
+									"query": [
+										{
+											"key": "parent_id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Only Sub Categories",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/categories/sub",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"categories",
+										"sub"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Only Sub-Sub Categories",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/categories/sub-sub",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"categories",
+										"sub-sub"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Category",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"id\": 1,\n  \"name\": \"Updated Electronics\"\n}"
+								},
+								"url": {
+									"raw": "{{kamaicart}}/categories/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"categories",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Category",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/categories/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"categories",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Attribute",
+					"item": [
+						{
+							"name": "Add Attribute",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Color\",\n  \"category_id\": 1,\n  \"input_type\": \"dropdown\"\n}"
+								},
+								"url": {
+									"raw": "{{kamaicart}}/attribute",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"attribute"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Attributes",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/attribute",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"attribute"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Attribute By ID",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/attribute/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"attribute",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Attribute",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Size\",\n  \"category_id\": 1,\n  \"input_type\": \"dropdown\"\n}"
+								},
+								"url": {
+									"raw": "{{kamaicart}}/attribute/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"attribute",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Attribute",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/attribute/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"attribute",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Attribute Value",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"attribute_id\": 1,\n  \"value\": \"Red\"\n}"
+								},
+								"url": {
+									"raw": "{{kamaicart}}/attribute/values",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"attribute",
+										"values"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Attribute Values",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/attribute/values?attribute_id=1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"attribute",
+										"values"
+									],
+									"query": [
+										{
+											"key": "attribute_id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Attribute Value",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NTU3NTU2MDcsImV4cCI6MTc1NjM2MDQwN30.Qrm9cm__o78Xx-gGXqT8NB7aXRt1s6dpeaVW2zWxSC0",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"value\": \"Blue\"\n}"
+								},
+								"url": {
+									"raw": "{{kamaicart}}/attribute/values/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"attribute",
+										"values",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Attribute Value",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/attribute/values/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"attribute",
+										"values",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Product",
+					"item": [
+						{
+							"name": "Add Product",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"shop_id\": 1,\n  \"category_id\": 2,\n  \"name\": \"Puma Sports Shoes\",\n  \"short_description\": \"High quality sports shoes\",\n  \"description\": \"Full description here\",\n  \"brand\": \"Puma\",\n  \"status\": \"active\"\n}"
+								},
+								"url": {
+									"raw": "{{kamaicart}}/product",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"product"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Products",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/product",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"product"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Product By ID",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/product/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"product",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Product",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Puma Running Shoes\",\n  \"short_description\": \"Updated description\",\n  \"status\": \"active\"\n}"
+								},
+								"url": {
+									"raw": "{{kamaicart}}/product/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"product",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Soft Delete Product",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/product/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"product",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Product Variants",
+					"item": [
+						{
+							"name": "Create Product Variant",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"product_id\": 1,\n  \"sku\": \"SKU123\",\n  \"price\": 1000,\n  \"stock\": 50\n}"
+								},
+								"url": {
+									"raw": "{{kamaicart}}/api/product_variants",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"api",
+										"product_variants"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Product Variants",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/api/product_variants",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"api",
+										"product_variants"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Product Variant by ID",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/api/product_variants/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"api",
+										"product_variants",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Product Variant",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"sku\": \"SKU456\",\n  \"price\": 1200,\n  \"stock\": 40\n}"
+								},
+								"url": {
+									"raw": "{{kamaicart}}/api/product_variants/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"api",
+										"product_variants",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Soft Delete Product Variant",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{kamaicart}}/api/product_variants/1",
+									"host": [
+										"{{kamaicart}}"
+									],
+									"path": [
+										"api",
+										"product_variants",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "general-setting save",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTU2ODIxNDMsImV4cCI6MTc1NjI4Njk0M30._fto8vdK9-Lql42DY0IiBQH6u0XAebBLP3MP4SE00GI",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "site_name",
+									"value": "My Awesome App",
+									"type": "text"
+								},
+								{
+									"key": "logo",
+									"type": "file",
+									"src": "/C:/Users/Lenovo/Downloads/Bootslander/Bootslander/assets/img/details-1.png"
+								},
+								{
+									"key": "email",
+									"value": "admin@example.com",
+									"type": "text"
+								},
+								{
+									"key": "phone",
+									"value": "+91-9876543210",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "Mumbai, India",
+									"type": "text"
+								},
+								{
+									"key": "favicon",
+									"type": "file",
+									"src": "/C:/Users/Lenovo/Downloads/Bootslander/Bootslander/assets/img/details-3.png"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kamaicart}}/generalSetting/save",
+							"host": [
+								"{{kamaicart}}"
+							],
+							"path": [
+								"generalSetting",
+								"save"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "general-setting",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTU2ODIxNDMsImV4cCI6MTc1NjI4Njk0M30._fto8vdK9-Lql42DY0IiBQH6u0XAebBLP3MP4SE00GI",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{kamaicart}}/generalSetting",
+							"host": [
+								"{{kamaicart}}"
+							],
+							"path": [
+								"generalSetting"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "sellers",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTU2ODIxNDMsImV4cCI6MTc1NjI4Njk0M30._fto8vdK9-Lql42DY0IiBQH6u0XAebBLP3MP4SE00GI",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{kamaicart}}/auth/sellers",
+							"host": [
+								"{{kamaicart}}"
+							],
+							"path": [
+								"auth",
+								"sellers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "customers",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTU2ODIxNDMsImV4cCI6MTc1NjI4Njk0M30._fto8vdK9-Lql42DY0IiBQH6u0XAebBLP3MP4SE00GI",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{kamaicart}}/auth/customers",
+							"host": [
+								"{{kamaicart}}"
+							],
+							"path": [
+								"auth",
+								"customers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "signup",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"seller\",\r\n  \"email\": \"seller9090@gmail.com\",\r\n  \"phone\": \"666666699\",\r\n  \"password\": \"seller\",\r\n  \"role_id\": 3\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{kamaicart}}/auth/signup",
+					"host": [
+						"{{kamaicart}}"
+					],
+					"path": [
+						"auth",
+						"signup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "signin",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"identifier\": \"seller@gmail.com\",\r\n  \"password\": \"seller\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{kamaicart}}/auth/signin",
+					"host": [
+						"{{kamaicart}}"
+					],
+					"path": [
+						"auth",
+						"signin"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "verify-otp",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"john@example.com\",\r\n  \"otp\": \"123456\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{kamaicart}}/auth/verify-otp",
+					"host": [
+						"{{kamaicart}}"
+					],
+					"path": [
+						"auth",
+						"verify-otp"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "send-reset-otp",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"john@example.com\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{kamaicart}}/auth/send-reset-otp",
+					"host": [
+						"{{kamaicart}}"
+					],
+					"path": [
+						"auth",
+						"send-reset-otp"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "verify-reset-otp",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"john@example.com\",\r\n  \"otp\": \"123456\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{kamaicart}}/auth/verify-reset-otp",
+					"host": [
+						"{{kamaicart}}"
+					],
+					"path": [
+						"auth",
+						"verify-reset-otp"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "reset-password",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"john@example.com\",\r\n  \"password\": \"newPassword123\"\r\n}\r\n\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{kamaicart}}/auth/reset-password",
+					"host": [
+						"{{kamaicart}}"
+					],
+					"path": [
+						"auth",
+						"reset-password"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "profile",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTU2ODIxNDMsImV4cCI6MTc1NjI4Njk0M30._fto8vdK9-Lql42DY0IiBQH6u0XAebBLP3MP4SE00GI",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{kamaicart}}/auth/profile",
+					"host": [
+						"{{kamaicart}}"
+					],
+					"path": [
+						"auth",
+						"profile"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "logout",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTU2ODIxNDMsImV4cCI6MTc1NjI4Njk0M30._fto8vdK9-Lql42DY0IiBQH6u0XAebBLP3MP4SE00GI",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{kamaicart}}/auth/logout",
+					"host": [
+						"{{kamaicart}}"
+					],
+					"path": [
+						"auth",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
