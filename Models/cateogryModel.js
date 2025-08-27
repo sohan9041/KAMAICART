@@ -1,5 +1,6 @@
 import slugify from "slugify";
 import Category from "../Schema/category.js";
+import { Op } from "sequelize";
 
 const slug = (name) => {
   if (!name || typeof name !== "string") throw new Error("slug name is required");
@@ -25,13 +26,12 @@ export const InsertMainCategory = async ({name,image,priority}) => {
 };
 
 // ✅ Insert Sub Category
-export const InsertSubCategory = async ({ name, parent_id }) => {
+export const InsertSubCategory = async ({ name, parent_id,image }) => {
   if (!name) throw new Error("Category name is required");
-  const { slug: slugName, unique_code,image } = slug(name);
-
+  const { slug: slugName, unique_code } = slug(name);
   const category = await Category.create({
     name,
-    image:image,
+    image:image|| null,
     slug: slugName,
     unique_code,
     parent_id,
@@ -49,7 +49,7 @@ export const GetInfoFromCategoriesData = async (parent_id) => {
 
   const categories = await Category.findAll({
     where: whereCondition,
-    order: [["id", "ASC"]],
+    order: [["priority", "ASC"]],
   });
 
   // Add image path dynamically
@@ -59,40 +59,64 @@ export const GetInfoFromCategoriesData = async (parent_id) => {
   }));
 };
 
-
 // ✅ Only Sub Categories (direct children of root)
 export const GetInfoOnlySubCategory = async () => {
   const baseUrl = process.env.BASE_URL || "";
-  const subcategories= await Category.findAll({
-    include: [{
-      model: Category,
-      as: "parent",
-      where: { parent_id: null,is_delete:false },
-    }],
+  const subcategories = await Category.findAll({
+    include: [
+      {
+        model: Category,
+        as: "parent",
+        where: { parent_id: null, is_delete: false },
+      },
+    ],
   });
 
-   return subcategories.map((cat) => ({
-    ...cat.toJSON(),
-    image: cat.image ? `${baseUrl}${cat.image}` : null,
-  }));
+  return subcategories.map((cat) => {
+    const obj = cat.toJSON();
+
+    return {
+      ...obj,
+      image: obj.image ? `${baseUrl}${obj.image}` : null,
+      parent: obj.parent
+        ? {
+            ...obj.parent,
+            image: obj.parent.image ? `${baseUrl}${obj.parent.image}` : null,
+          }
+        : null,
+    };
+  });
 };
 
 // ✅ Only Sub-Sub Categories
 export const GetInfoOnlySubSubCategory = async () => {
   const baseUrl = process.env.BASE_URL || "";
-   const subsubcategories=  await Category.findAll({
-    include: [{
-      model: Category,
-      as: "parent",
-      where: { parent_id: { [Op.ne]: null },is_delete:false },
-    }],
+  const subsubcategories = await Category.findAll({
+    include: [
+      {
+        model: Category,
+        as: "parent",
+        where: { parent_id: { [Op.ne]: null }, is_delete: false },
+      },
+    ],
   });
 
-  return subsubcategories.map((cat) => ({
-    ...cat.toJSON(),
-    image: cat.image ? `${baseUrl}${cat.image}` : null,
-  }));
+  return subsubcategories.map((cat) => {
+    const obj = cat.toJSON();
+
+    return {
+      ...obj,
+      image: obj.image ? `${baseUrl}${obj.image}` : null,
+      parent: obj.parent
+        ? {
+            ...obj.parent,
+            image: obj.parent.image ? `${baseUrl}${obj.parent.image}` : null,
+          }
+        : null,
+    };
+  });
 };
+
 
 // ✅ Update Category
 export const UpdateCategoryByID = async ({ id, name }) => {
@@ -123,5 +147,55 @@ export const DeleteCategoryByID = async (id) => {
   return category;
 };
 
+
+export const GetThreeLevelCategoriesData = async () => {
+  const baseUrl = process.env.BASE_URL || "";
+
+  const categories = await Category.findAll({
+    where: { parent_id: null, is_delete: false }, // only main categories
+    include: [
+      {
+        model: Category,
+        as: "children",
+        where: { is_delete: false },
+        required: false,
+        include: [
+          {
+            model: Category,
+            as: "children",
+            where: { is_delete: false },
+            required: false,
+          },
+        ],
+      },
+    ],
+    order: [["priority", "ASC"]],
+  });
+
+  // Format with full image URL and only id, name, image
+  return categories.map((main) => ({
+    id: main.id,
+    name: main.name,
+    image: main.image ? `${baseUrl}${main.image}` : "",
+    children: main.children
+      ? main.children
+          .sort((a, b) => (a.priority || 0) - (b.priority || 0))
+          .map((child) => ({
+            id: child.id,
+            name: child.name,
+            image: child.image ? `${baseUrl}${child.image}` : "",
+            children: child.children
+              ? child.children
+                  .sort((a, b) => (a.priority || 0) - (b.priority || 0))
+                  .map((sub) => ({
+                    id: sub.id,
+                    name: sub.name,
+                    image: sub.image ? `${baseUrl}${sub.image}` : "",
+                  }))
+              : [],
+          }))
+      : [],
+  }));
+};
 
 export { Category };

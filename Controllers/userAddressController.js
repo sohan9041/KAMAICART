@@ -102,7 +102,7 @@ export const AppDeleteAddress = async (req, res) => {
     const address = await deleteuserAddress(id);
     if (!address)
       return appapiResponse.notFoundResponse(res, "Address not found");
-    return appapiResponse.successResponse(res, "Address deleted");
+    return appapiResponse.successResponseWithData(res, "Address deleted");
   } catch (err) {
     return appapiResponse.ErrorResponse(res, err.message);
   }

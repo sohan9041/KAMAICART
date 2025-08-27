@@ -1,4 +1,5 @@
 import {
+  Category,
   InsertMainCategory,
   InsertSubCategory,
   GetInfoFromCategoriesData,
@@ -6,9 +7,10 @@ import {
   GetInfoOnlySubSubCategory,
   UpdateCategoryByID,
   DeleteCategoryByID,
+  GetThreeLevelCategoriesData 
 } from "../Models/cateogryModel.js"; // adjust path if needed
 import apiResponse from "../Helper/apiResponse.js";
-
+import appapiResponse from "../Helper/appapiResponse.js";
 // ✅ Create Main Category with Image
 export const createMainCategory = async (req, res) => {
   try {
@@ -42,6 +44,31 @@ export const getCategories = async (req, res) => {
     const parent_id = req.query.parent_id || "null";
     const records = await GetInfoFromCategoriesData(parent_id);
     return apiResponse.successResponseWithData(res, "Fetched successfully", records);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+export const swipeCategories = async (req, res) => {
+  try {
+    const { ids } = req.body; // Example: [5, 3, 7, 2, 1]
+
+    if (!ids || !Array.isArray(ids)) {
+      return apiResponse.ErrorResponse(res, "Invalid input. Provide array of ids.");
+    }
+
+    // Loop and update priority based on index
+    for (let i = 0; i < ids.length; i++) {
+      await Category.update(
+        { priority: i + 1 }, // priority starts from 1
+        { where: { id: ids[i] } }
+      );
+    }
+
+    const parent_id = req.query.parent_id || "null";
+    const records = await GetInfoFromCategoriesData(parent_id);
+
+    return apiResponse.successResponseWithData(res, "Priorities updated successfully",records);
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }
@@ -86,5 +113,15 @@ export const deleteCategory = async (req, res) => {
     return apiResponse.successResponseWithData(res, "Deleted successfully", { id: record });
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+
+export const getThreeLevelCategories = async (req, res) => {
+  try {
+    const records = await GetThreeLevelCategoriesData();
+    return appapiResponse.successResponseWithData(res, "Fetched successfully", records);
+  } catch (err) {
+    return appapiResponse.ErrorResponse(res, err.message);
   }
 };
