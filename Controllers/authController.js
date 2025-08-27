@@ -282,6 +282,7 @@ export const AppSignup = async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role_id,
+        profileImage:""
       },
     });
   } catch (err) {
@@ -319,7 +320,9 @@ export const AppSignin = async (req, res) => {
         email: user.email,
         phone: user.phoneno,
         role: user.role_id,
-        profileImage:process.env.BASE_URL + user.profileImage
+        profileImage: user.profileImage 
+      ? process.env.BASE_URL + user.profileImage 
+      : ""
       },
     });
   } catch (err) {
@@ -352,7 +355,9 @@ export const AppProfile = async (req, res) => {
         email: user.email,
         phone: user.phoneno,
         role: user.role_id,
-        profileImage:process.env.BASE_URL + user.profileImage
+        profileImage: user.profileImage 
+      ? process.env.BASE_URL + user.profileImage 
+      : ""
       });
   } catch (err) {
     return appapiResponse.forbiddenResponse(res, "Invalid or expired token");
@@ -382,9 +387,51 @@ export const uploadUserImage = async (req, res) => {
       email: user.email,
       phone: user.phoneno,
       role: user.role_id,
-      profileImage: user.profileImage,
+      profileImage: user.profileImage 
+      ? process.env.BASE_URL + user.profileImage 
+      : ""
     });
   } catch (error) {
     return appapiResponse.ErrorResponse(res, "Something went wrong");
+  }
+};
+
+//update profile
+export const updateProfile = async (req, res) => {
+  try {
+    const decoded = req.user;
+    const { name, phone } = req.body;
+    const user = await User.findOne({ where: { id: decoded.id } });
+    if (!user) return apiResponse.notFoundResponse(res, "User not found");
+    user.name = name || user.name;
+    user.phoneno = phone || user.phoneno;
+    await user.save();
+    return apiResponse.successResponseWithData(res, "Profile updated", user);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+//update profile
+export const AppUpdateProfile = async (req, res) => {
+  try {
+    const decoded = req.user;
+    const { name, phone } = req.body;    
+    const user = await User.findOne({ where: { id: decoded.id } });
+    if (!user) return appapiResponse.notFoundResponse(res, "User not found");
+    user.name = name || user.name;
+    user.phoneno = phone || user.phoneno;
+    //user.email = email || user.email; // prevent email change
+    await user.save();
+    return appapiResponse.successResponseWithData(res, "Profile updated", {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phoneno,
+        role: user.role_id,
+        profileImage:process.env.BASE_URL + user.profileImage
+      });   
+  } catch (err) {
+    return appapiResponse.ErrorResponse(res, err.message);
   }
 };

@@ -22,6 +22,10 @@ const Category = sequelize.define(
       allowNull: false,
       unique: true,
     },
+    priority:{
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     unique_code: {
       type: DataTypes.STRING,
       allowNull: false,

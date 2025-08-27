@@ -9,6 +9,7 @@ import { connectDB } from "./Config/connectDb.js";
 import { router } from "./Routes/authRoutes.js";
 
 import apiRoutes from "./Routes/apiRoutes.js";
+import userAddressRoutes from "./Routes/userAddressRoutes.js";
 import productRoutes from "./Routes/productRoutes.js";
 import generalSettingRoute from "./Routes/generalSettingRoute.js";
 import roleRoutes from "./Routes/roleRoutes.js";
@@ -28,6 +29,7 @@ app.use(express.json());
 
 app.use("/product", productRoutes);
 app.use("/user", apiRoutes);
+app.use("/user", userAddressRoutes);
 app.use("/auth", router);
 app.use("/categories", categoryRoutes);
 app.use("/generalSetting", generalSettingRoute);

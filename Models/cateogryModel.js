@@ -9,16 +9,16 @@ const slug = (name) => {
 };
 
 // ✅ Insert Main Category
-export const InsertMainCategory = async (name) => {
+export const InsertMainCategory = async ({name,image,priority}) => {
   if (!name) throw new Error("Category name is required");
-  const { slug: slugName, unique_code,image } = slug(name);
+  const { slug: slugName, unique_code } = slug(name);
 
   const category = await Category.create({
     name,
     slug: slugName,
     image:image,
     unique_code,
-    parent_id: null,
+    parent_id: null
   });
 
   return category;

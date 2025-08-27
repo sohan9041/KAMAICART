@@ -1,6 +1,6 @@
 import express from "express";
 import { Signup, Signin, VerifyOtp, sendResetPassOTP, verifyResetOTP, resetPassword, profile, Logout ,
-    getSellers,getCustomers
+    getSellers,getCustomers,updateProfile
  } from "../Controllers/authController.js";
 import { verifyUser } from "../Middleware/verifyAuthMiddleware.js";
 
@@ -14,6 +14,7 @@ router.post("/verify-reset-otp", verifyResetOTP);
 router.post("/reset-password", resetPassword);
 router.get("/profile",verifyUser, profile);
 router.post("/logout", Logout);
+router.post("/update-profile",verifyUser, updateProfile);
 
 
 router.get("/sellers",verifyUser, getSellers);

@@ -5,7 +5,7 @@
 -- Dumped from database version 17.3
 -- Dumped by pg_dump version 17.3
 
--- Started on 2025-08-26 12:25:08
+-- Started on 2025-08-26 12:33:09
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1458,7 +1458,7 @@ ALTER TABLE ONLY public.wishlists
     ADD CONSTRAINT wishlists_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
 
 
--- Completed on 2025-08-26 12:25:09
+-- Completed on 2025-08-26 12:33:09
 
 --
 -- PostgreSQL database dump complete
