@@ -23,8 +23,30 @@ import bannerRoutes from "./Routes/bannerRoutes.js";
 const app = express();
 app.use(cookieParser());
 dotenv.config();
+// app.use(cors());
 
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",    // local frontend
+  "http://localhost:3000",   // if you also use React dev server
+  "https://www.kamaikart.in" // production frontend
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = "The CORS policy for this site does not allow access from the specified Origin.";
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true, // ✅ allow cookies/authorization headers
+  })
+);
+
 app.use(express.json());
 
 app.use("/product", productRoutes);
@@ -53,6 +75,15 @@ app.get("/sohan", (req, res) => {
     message: "Welcome to the backend" + process.env.PORT,
   });
 });
+
+// app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+// const corsOptions = {
+//   origin: '*',
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//   credentials: true,
+// };
+
+// app.use(cors(corsOptions));
 
 connectDB().then(() => {
   app.listen(process.env.PORT, () => {

@@ -44,6 +44,11 @@ export const AppAddAddress = async (req, res) => {
     const userId = req.user.id;
     req.body.user_id = userId;
 
+    // Convert string to boolean
+    if (typeof req.body.default_address === "string") {
+      req.body.default_address = req.body.default_address.toLowerCase() === "true";
+    }
+
     if (req.body.default_address === true) {
       await userAddress.update(
         { default_address: false },
@@ -63,14 +68,19 @@ export const AppAddAddress = async (req, res) => {
   }
 };
 
+
 //Update Address
 export const AppUpdateAddress = async (req, res) => {
   try {
-    //const decoded = req.user;
     const id = req.params.id;
-
     const userId = req.user.id;
     req.body.user_id = userId;
+
+    // Convert string/number to boolean
+    if (typeof req.body.default_address === "string") {
+      req.body.default_address =
+        req.body.default_address.toLowerCase() === "true" 
+    }
 
     if (req.body.default_address === true) {
       await userAddress.update(
@@ -82,6 +92,7 @@ export const AppUpdateAddress = async (req, res) => {
     const address = await getuserAddressById(id);
     if (!address)
       return appapiResponse.notFoundResponse(res, "Address not found");
+
     const updatedAddress = await updateuserAddress(id, req.body);
 
     return appapiResponse.successResponseWithData(
@@ -93,6 +104,7 @@ export const AppUpdateAddress = async (req, res) => {
     return appapiResponse.ErrorResponse(res, err.message);
   }
 };
+
 
 //Delete Address
 export const AppDeleteAddress = async (req, res) => {

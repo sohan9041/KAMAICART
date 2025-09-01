@@ -52,7 +52,6 @@ export const getBannerByType = async (req, res) => {
       where: { is_delete: false, type }
     });
 
-    // prepend BASE_URL to image
     const updatedRecords = records.map((banner) => ({
       ...banner.dataValues,
       image: process.env.BASE_URL + banner.image,
@@ -71,8 +70,6 @@ export const getBannerByTypeapp = async (req, res) => {
     const records = await Banner.findAll({
       where: { is_delete: false, type }
     });
-
-    // prepend BASE_URL to image
     const updatedRecords = records.map((banner) => ({
       ...banner.dataValues,
       image: process.env.BASE_URL + banner.image,

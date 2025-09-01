@@ -14,11 +14,11 @@ const Attribute = sequelize.define("Attribute", {
   },
   category_id: {
     type: DataTypes.BIGINT,
-    allowNull: false,
+    allowNull: true,
   },
   input_type: {
-    type: DataTypes.ENUM("text", "dropdown", "color", "number"),
-    allowNull: false,
+    type: DataTypes.ENUM("text", "dropdown", "color", "number","none"),
+    allowNull: true,
   },
    is_deleted: {
     type: DataTypes.BOOLEAN,

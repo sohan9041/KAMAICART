@@ -16,6 +16,11 @@ const Category = sequelize.define(
     image: {
       type: DataTypes.STRING,
       allowNull: true,
+      get() {
+      const rawValue = this.getDataValue("image");
+      if (!rawValue) return null;
+      return `${process.env.BASE_URL}${rawValue}`;
+    },
     },
     slug: {
       type: DataTypes.STRING,

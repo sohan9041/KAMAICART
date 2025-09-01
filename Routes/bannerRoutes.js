@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import { createBanner, getBannerList, getBannerByType, deleteBanner,getBannerByTypeapp } from "../Controllers/bannerController.js";
-import { verifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { verifyUser,cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
 const router = express.Router();
 
 // Multer config for banner uploads
@@ -16,10 +16,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Routes
-router.post("/",verifyUser, upload.single("image"), createBanner);
-router.get("/",verifyUser, getBannerList);
+router.post("/",cookiesverifyUser, upload.single("image"), createBanner);
+router.get("/",cookiesverifyUser, getBannerList);
 router.get("/web", (req, res) => getBannerByType({ ...req, params: { type: "web" } }, res));
 router.get("/app", (req, res) => getBannerByTypeapp({ ...req, params: { type: "app" } }, res));
-router.delete("/:id",verifyUser, deleteBanner);
+router.delete("/:id",cookiesverifyUser, deleteBanner);
 
 export default router;

@@ -1,5 +1,5 @@
 import express from "express";
-import { verifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { verifyUser,cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
 import {
   addProductVariant,
   getProductVariants,
@@ -10,10 +10,10 @@ import {
 
 const router = express.Router();
 
-router.post("/", verifyUser, addProductVariant);
-router.get("/", verifyUser, getProductVariants);
-router.get("/:id", verifyUser, getProductVariant);
-router.put("/:id", verifyUser, updateProductVariant);
-router.delete("/:id", verifyUser, deleteProductVariant);
+router.post("/", cookiesverifyUser, addProductVariant);
+router.get("/", cookiesverifyUser, getProductVariants);
+router.get("/:id", cookiesverifyUser, getProductVariant);
+router.put("/:id", cookiesverifyUser, updateProductVariant);
+router.delete("/:id", cookiesverifyUser, deleteProductVariant);
 
 export default router;

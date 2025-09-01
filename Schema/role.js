@@ -13,7 +13,12 @@ export const Role = sequelize.define("role", {
   },
   icon: { 
     type: DataTypes.STRING, 
-    allowNull: true 
+    allowNull: true,
+     get() {
+        const rawValue = this.getDataValue("icon");
+        if (!rawValue) return null;
+        return `${process.env.BASE_URL}${rawValue}`;
+      }, 
   },
   description: { 
     type: DataTypes.TEXT, 

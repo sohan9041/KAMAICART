@@ -7,15 +7,15 @@ import {
   updateProductById,
   deleteProductById,
 } from "../Controllers/productController.js";
-import { verifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { verifyUser,cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
 
 const router = express.Router();
 
 // Product Routes
-router.post("/", verifyUser, addProduct);
-router.get("/", verifyUser, getProducts);
-router.get("/:id", verifyUser, getProduct);
-router.put("/:id", verifyUser, updateProductById);
-router.delete("/:id", verifyUser, deleteProductById);
+router.post("/", cookiesverifyUser, addProduct);
+router.get("/", cookiesverifyUser, getProducts);
+router.get("/:id", cookiesverifyUser, getProduct);
+router.put("/:id", cookiesverifyUser, updateProductById);
+router.delete("/:id", cookiesverifyUser, deleteProductById);
 
 export default router;

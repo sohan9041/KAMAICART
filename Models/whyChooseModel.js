@@ -20,20 +20,14 @@ export const getWhyChoose = async (where = {}) => {
 export const getAll = async () => {
   const records = await WhyChoose.findAll();
 
-  return records.map((record) => ({
-    ...record.toJSON(),
-    icon: record.icon ? `${process.env.BASE_URL}${record.icon}` : null,
-  }));
+  return records;
 };
 
 // ✅ Get only not deleted records
 export const getNotDeleteWhyChoose = async () => {
   const records = await WhyChoose.findAll({ where: { is_delete: false } });
 
-  return records.map((record) => ({
-    ...record.toJSON(),
-    icon: record.icon ? `${process.env.BASE_URL}${record.icon}` : null,
-  }));
+  return records;
 };
 // Soft delete a record
 export const softDeleteWhyChoose = async (id) => {

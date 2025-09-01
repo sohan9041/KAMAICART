@@ -96,27 +96,17 @@ export const getAllRoles = async (req, res) => {
       return apiResponse.notFoundResponse(res, "No roles found", []);
     }
 
-    // Add full URL for icon field
-    const baseUrl = process.env.BASE_URL || ""; 
-
-    const rolesWithFullIcon = roles.map((role) => {
-      return {
-        ...role.toJSON(),
-        icon: role.icon ? `${baseUrl}${role.icon}` : null, 
-      };
-    });
-
     return apiResponse.successResponseWithData(
       res,
       "Roles fetched successfully",
-      rolesWithFullIcon
+      roles
     );
   } catch (error) {
     return apiResponse.ErrorResponse(res, error.message);
   }
 };
 
-// Get All Roles
+// Get All Roles (for Web)
 export const getAllRolesforWeb = async (req, res) => {
   try {
     const roles = await Role.findAll({
@@ -133,25 +123,16 @@ export const getAllRolesforWeb = async (req, res) => {
       return apiResponse.notFoundResponse(res, "No roles found", []);
     }
 
-    // Add full URL for icon field
-    const baseUrl = process.env.BASE_URL || ""; 
-
-    const rolesWithFullIcon = roles.map((role) => {
-      return {
-        ...role.toJSON(),
-        icon: role.icon ? `${baseUrl}${role.icon}` : null, 
-      };
-    });
-
     return apiResponse.successResponseWithData(
       res,
       "Roles fetched successfully",
-      rolesWithFullIcon
+      roles
     );
   } catch (error) {
     return apiResponse.ErrorResponse(res, error.message);
   }
 };
+
 
 
 // Delete Role

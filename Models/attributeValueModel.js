@@ -7,7 +7,7 @@ export const createAttributeValue = async (data) => {
 
 // ✅ Get all values for an attribute
 export const getValuesByAttributeId = async (attributeId) => {
-  return await AttributeValue.findAll({ where: { attribute_id: attributeId } });
+  return await AttributeValue.findAll({ where: { attribute_id: attributeId } }); 
 };
 
 // ✅ Update Attribute Value

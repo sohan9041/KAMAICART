@@ -9,9 +9,18 @@ export const createAttribute = async (data) => {
 // ✅ Get all Attributes (with values if needed)
 export const getAllAttributes = async () => {
   return await Attribute.findAll({
-    include: [{ model: AttributeValue, as: "values" }],
+    where: { is_deleted: false }, // ✅ only non-deleted attributes
+    include: [
+      {
+        model: AttributeValue,
+        as: "values",
+        where: { is_deleted: false }, // ✅ only non-deleted values
+        required: false, // ✅ still return attribute even if it has no values
+      },
+    ],
   });
 };
+
 
 // ✅ Get Attribute by ID
 export const getAttributeById = async (id) => {

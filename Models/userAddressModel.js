@@ -13,7 +13,10 @@ export const getuserAddressById = async (id) => {
 
 // ✅ Get by User ID
 export const getuserAddressByuserId = async (user_id) => {
-  return await userAddress.findAll({ where: { user_id, is_deleted: false } });
+  return await userAddress.findAll({
+    where: { user_id, is_deleted: false },
+    order: [["default_address", "DESC"], ["id", "DESC"]], // default first, then latest
+  });
 };
 
 // ✅ Update Address by ID

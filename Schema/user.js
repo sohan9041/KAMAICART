@@ -26,6 +26,14 @@ export const User = sequelize.define("user", {
     type: DataTypes.STRING, 
     allowNull: true, 
   },
+  otp: { 
+    type: DataTypes.STRING, 
+    allowNull: true, 
+  },
+  otp_expiry: { 
+    type: DataTypes.DATE, 
+    allowNull: true, 
+  },
   password: { 
     type: DataTypes.STRING, 
     allowNull: false 

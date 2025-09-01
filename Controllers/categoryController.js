@@ -7,7 +7,8 @@ import {
   GetInfoOnlySubSubCategory,
   UpdateCategoryByID,
   DeleteCategoryByID,
-  GetThreeLevelCategoriesData 
+  GetThreeLevelCategoriesData ,
+  GetCategoryByID
 } from "../Models/cateogryModel.js"; // adjust path if needed
 import apiResponse from "../Helper/apiResponse.js";
 import appapiResponse from "../Helper/appapiResponse.js";
@@ -97,8 +98,11 @@ export const getSubSubCategories = async (req, res) => {
 // ✅ Update Category
 export const updateCategory = async (req, res) => {
   try {
-    const { id, name } = req.body;
-    const record = await UpdateCategoryByID({ id, name });
+    const id = req.params.id;
+    const { name,parent_id } = req.body;
+    const image = req.file ? `/uploads/category/${req.file.filename}` : null;
+
+    const record = await UpdateCategoryByID({ id, name,parent_id,image});
     return apiResponse.successResponseWithData(res, "Updated successfully", record);
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
@@ -110,11 +114,22 @@ export const deleteCategory = async (req, res) => {
   try {
     const id = req.params.id;
     const record = await DeleteCategoryByID(id);
-    return apiResponse.successResponseWithData(res, "Deleted successfully", { id: record });
+    return apiResponse.successResponseWithData(res, "Deleted successfully", record);
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }
 };
+
+// get Category by ID
+export const getCategoryById = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const record = await GetCategoryByID(id);
+    return apiResponse.successResponseWithData(res, "Fetched successfully", record);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+}
 
 
 export const getThreeLevelCategories = async (req, res) => {
