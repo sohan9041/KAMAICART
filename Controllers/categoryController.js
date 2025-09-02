@@ -21,6 +21,7 @@ export const createMainCategory = async (req, res) => {
     const record = await InsertMainCategory({ name, image });
     return apiResponse.successResponseWithData(res, "Main Category created", record);
   } catch (err) {
+    console.log(err);
     return apiResponse.ErrorResponse(res, err.message);
   }
 };

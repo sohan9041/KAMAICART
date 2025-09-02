@@ -17,7 +17,7 @@ const Attribute = sequelize.define("Attribute", {
     allowNull: true,
   },
   input_type: {
-    type: DataTypes.ENUM("text", "dropdown", "color", "number","none"),
+    type: DataTypes.STRING,
     allowNull: true,
   },
    is_deleted: {

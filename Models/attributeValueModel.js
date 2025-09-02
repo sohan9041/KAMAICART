@@ -7,7 +7,9 @@ export const createAttributeValue = async (data) => {
 
 // ✅ Get all values for an attribute
 export const getValuesByAttributeId = async (attributeId) => {
-  return await AttributeValue.findAll({ where: { attribute_id: attributeId } }); 
+  return await AttributeValue.findAll({
+    where: { attribute_id: attributeId, is_deleted: false },
+  });
 };
 
 // ✅ Update Attribute Value
@@ -20,9 +22,7 @@ export const updateAttributeValue = async (id, data) => {
 
 // ✅ Soft Delete Attribute Value
 export const deleteAttributeValue = async (id) => {
-  return await AttributeValue.update(
-    { is_deleted: true },
-    { where: { id } }
-  );
+  return await AttributeValue.update({ is_deleted: true }, { where: { id } });
 };
 
+export {AttributeValue}

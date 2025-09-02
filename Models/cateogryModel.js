@@ -18,7 +18,14 @@ const slug = (name) => {
 // Insert main category
 export const InsertMainCategory = async ({ name, image, priority }) => {
   if (!name) throw new Error("Category name is required");
+
   const { slug: slugName, unique_code } = slug(name);
+
+  // 🔹 Check if slug already exists
+  const existingCategory = await Category.findOne({ where: { slug: slugName, is_delete: false } });
+  if (existingCategory) {
+    throw new Error(`Category with slug "${slugName}" already exists. Please choose a different name.`);
+  }
 
   return Category.create({
     name,
@@ -30,10 +37,16 @@ export const InsertMainCategory = async ({ name, image, priority }) => {
   });
 };
 
+
 // Insert subcategory with parent_name
 export const InsertSubCategory = async ({ name, parent_id, image }) => {
   if (!name) throw new Error("Category name is required");
   const { slug: slugName, unique_code } = slug(name);
+
+   const existingCategory = await Category.findOne({ where: { slug: slugName, is_delete: false } });
+  if (existingCategory) {
+    throw new Error(`Category with slug "${slugName}" already exists. Please choose a different name.`);
+  }
 
   const category = await Category.create({
     name,
@@ -70,6 +83,7 @@ export const UpdateCategoryByID = async ({ id, name, parent_id, image }) => {
   if (!category) throw new Error("Category not found");
 
   const { slug: slugName, unique_code } = slug(name);
+  
 
   const updatedData = {
     name,

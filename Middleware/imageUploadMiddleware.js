@@ -109,6 +109,19 @@ const profileImage = multer.diskStorage({
   },
 });
 
+const Productstorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/products/"); // store inside uploads/products
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+// multer instance
+export const uploadProductImages = multer({ Productstorage }).array("images", 10); 
+
 // ✅ Final upload middleware
 export const uploadProfileImage = multer({ storage: profileImage, fileFilterForRole });
 

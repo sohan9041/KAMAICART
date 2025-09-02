@@ -22,3 +22,5 @@ export const softDeleteProductVariant = async (id) => {
     { where: { id } }
   );
 };
+
+export { ProductVariant };

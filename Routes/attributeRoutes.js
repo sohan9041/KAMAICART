@@ -23,8 +23,8 @@ router.delete("/:id", cookiesverifyUser, deleteAttributeById); // Soft Delete At
 
 // ✅ Attribute Value Routes
 router.post("/values", cookiesverifyUser, addAttributeValue);           // Add Attribute Value
-router.get("/:attribute_id/values", cookiesverifyUser, getAttributeValues);           // Get All Attribute Values
-router.put("/values/:id", cookiesverifyUser, updateAttributeValueById); // Update Attribute Value by ID
-router.delete("/values/:id", cookiesverifyUser, deleteAttributeValueById); // Soft Delete Attribute Value by ID 
+//router.get("/:attribute_id/values", cookiesverifyUser, getAttributeValues);           // Get All Attribute Values
+//router.put("/values/:id", cookiesverifyUser, updateAttributeValueById); // Update Attribute Value by ID
+//router.delete("/values/:id", cookiesverifyUser, deleteAttributeValueById); // Soft Delete Attribute Value by ID 
 
 export default router;

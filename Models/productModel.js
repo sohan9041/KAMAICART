@@ -28,3 +28,6 @@ export const deleteProduct = async (id) => {
   const [deleted] = await Product.update({ is_deleted: true }, { where: { id } });
   return deleted;
 };
+
+
+export { Product };

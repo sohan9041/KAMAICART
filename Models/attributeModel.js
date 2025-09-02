@@ -25,9 +25,17 @@ export const getAllAttributes = async () => {
 // ✅ Get Attribute by ID
 export const getAttributeById = async (id) => {
   return await Attribute.findByPk(id, {
-    include: [{ model: AttributeValue, as: "values" }],
+    include: [
+      { 
+        model: AttributeValue, 
+        as: "values",
+        where: { is_deleted: false },
+        required: false // ensures Attribute is returned even if no active values
+      }
+    ],
   });
 };
+
 
 // ✅ Update Attribute
 export const updateAttribute = async (id, data) => {
@@ -43,3 +51,6 @@ export const deleteAttribute = async (id) => {
     { where: { id } }
   );
 };
+
+
+export { Attribute }

@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import {sequelize} from "../Config/connectDb.js"; // your sequelize instance
+import ProductVariantAttributeValue from "./productVariantAttributeValue.js";
 
 const ProductVariant = sequelize.define("ProductVariant", {
   id: {
@@ -32,5 +33,8 @@ const ProductVariant = sequelize.define("ProductVariant", {
   timestamps: true, // adds createdAt and updatedAt
   tableName: "product_variants",
 });
+
+ProductVariant.hasMany(ProductVariantAttributeValue, { foreignKey: "variant_id", as: "attributes" });
+ProductVariantAttributeValue.belongsTo(ProductVariant, { foreignKey: "variant_id", as: "variant" });
 
 export default ProductVariant;
