@@ -20,6 +20,14 @@ const ProductVariant = sequelize.define("ProductVariant", {
     type: DataTypes.DECIMAL(10,2),
     allowNull: false,
   },
+  shipping_cost: {
+    type: DataTypes.DECIMAL(10,2),
+    allowNull: false,
+  },
+  selling_price: {
+    type: DataTypes.DECIMAL(10,2),
+    allowNull: false,
+  },
   stock: {
     type: DataTypes.INTEGER,
     allowNull: false,

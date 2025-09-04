@@ -120,7 +120,7 @@ const Productstorage = multer.diskStorage({
 });
 
 // multer instance
-export const uploadProductImages = multer({ Productstorage }).array("images", 10); 
+export const uploadProductImages = multer({ storage: Productstorage }).array("images", 10);
 
 // ✅ Final upload middleware
 export const uploadProfileImage = multer({ storage: profileImage, fileFilterForRole });

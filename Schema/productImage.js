@@ -34,6 +34,12 @@ const ProductImage = sequelize.define(
     image_url: {
       type: DataTypes.STRING,
       allowNull: false,
+
+       get() {
+        const rawValue = this.getDataValue("image_url");
+        if (!rawValue) return null;
+        return `${process.env.BASE_URL}${rawValue}`;
+      }, 
     },
 
     is_primary: {
