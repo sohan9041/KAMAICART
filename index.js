@@ -19,6 +19,8 @@ import categoryRoutes from "./Routes/categoryRoutes.js";
 import attributeRoutes from "./Routes/attributeRoutes.js";
 import productVariantRoutes from "./Routes/productVariantRoutes.js";
 import bannerRoutes from "./Routes/bannerRoutes.js";
+import brandRoutes from "./Routes/brandRoutes.js";
+import sellerRoutes from "./Routes/sellerRoutes.js";
 
 const app = express();
 app.use(cookieParser());
@@ -52,6 +54,7 @@ app.use(express.json());
 app.use("/product", productRoutes);
 app.use("/user", apiRoutes);
 app.use("/user", userAddressRoutes);
+app.use("/seller", sellerRoutes);
 app.use("/auth", router);
 app.use("/categories", categoryRoutes);
 app.use("/generalSetting", generalSettingRoute);
@@ -61,6 +64,7 @@ app.use("/whyChoose", whyChooseRoute);
 app.use("/attribute", attributeRoutes);
 app.use("/productVariant", productVariantRoutes);
 app.use("/banner", bannerRoutes);
+app.use("/brand", brandRoutes);
 app.use(morgan("dev"));
 app.use(
   helmet({

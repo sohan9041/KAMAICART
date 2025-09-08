@@ -642,3 +642,115 @@ export const AppupdatePassword = async (req, res) => {
   }
 };
 
+/* web */
+export const webforgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email)
+      return apiResponse.validationErrorWithData(res, "Email is required");
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) return apiResponse.notFoundResponse(res, "User not found");
+
+    // Static OTP (later you can generate random one)
+    const otp = "123456";
+    const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
+
+    await user.update({ otp, otp_expiry: expiry });
+
+    return apiResponse.successResponseWithData(res, "OTP sent successfully", email);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+export const webverifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp)
+      return apiResponse.validationErrorWithData(
+        res,
+        "Email and OTP are required"
+      );
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) return apiResponse.notFoundResponse(res, "User not found");
+
+    if (user.otp !== otp) {
+      return apiResponse.successResponseWithData(res, "Invalid OTP");
+    }
+
+    if (new Date() > new Date(user.otp_expiry)) {
+      return apiResponse.successResponseWithData(res, "OTP expired");
+    }
+
+    return apiResponse.successResponseWithData(res, "OTP verified successfully");
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+export const webresetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword)
+      return apiResponse.validationErrorWithData(
+        res,
+        "Email and new password are required"
+      );
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) return apiResponse.notFoundResponse(res, "User not found");
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await user.update({
+      password: hashedPassword,
+      otp: null, // clear OTP
+      otp_expiry: null,
+    });
+
+    return apiResponse.successResponseWithData(res, "Password reset successfully");
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+export const webupdatePassword = async (req, res) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+
+    if (!email || !currentPassword || !newPassword) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Email, current password and new password are required"
+      );
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return apiResponse.notFoundResponse(res, "User not found");
+    }
+
+    // Compare current password
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!passwordMatch) {
+      return apiResponse.validationErrorWithData(res, "Current password is incorrect", null);
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await user.update({
+      password: hashedPassword,
+      otp: null,
+      otp_expiry: null,
+    });
+
+    return apiResponse.successResponseWithData(res, "Password updated successfully");
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+

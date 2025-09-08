@@ -3,6 +3,7 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "../Config/connectDb.js";
 import ProductVariant from "./productVariant.js";
 import ProductImage from "./productImage.js";
+import Category from "./category.js";
 
 const Product = sequelize.define(
   "Product",
@@ -16,9 +17,17 @@ const Product = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    category_id: {
+    maincategory_id: {
       type: DataTypes.BIGINT,
       allowNull: false,
+    },
+    subcategory_id: {
+      type: DataTypes.BIGINT,
+      allowNull: false,
+    },
+    category_id: {
+      type: DataTypes.BIGINT,
+      allowNull: true,
     },
     name: {
       type: DataTypes.STRING,
@@ -30,11 +39,11 @@ const Product = sequelize.define(
     },
     description: {
       type: DataTypes.TEXT,
-       allowNull: true,
+      allowNull: true,
     },
     brand: {
       type: DataTypes.STRING,
-       allowNull: true,
+      allowNull: true,
     },
     status: {
       type: DataTypes.ENUM("active", "inactive"),
@@ -43,6 +52,10 @@ const Product = sequelize.define(
     is_deleted: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
+    },
+    product_type: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
   },
   {
@@ -53,8 +66,11 @@ const Product = sequelize.define(
 
 Product.hasMany(ProductVariant, { foreignKey: "product_id", as: "variants" });
 Product.hasMany(ProductImage, { foreignKey: "product_id", as: "images" });
-
 ProductVariant.belongsTo(Product, { foreignKey: "product_id", as: "product" });
+
+
+Product.belongsTo(Category, { foreignKey: "category_id", as: "category" });
+Category.hasMany(Product, { foreignKey: "category_id", as: "products" });
 
 
 export default Product;

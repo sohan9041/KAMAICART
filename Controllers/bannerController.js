@@ -15,6 +15,7 @@ export const createBanner = async (req, res) => {
     const data = {
       image: `/uploads/banner/${req.file.filename}`,
       type: req.body.type,
+      title:req.body.title
     };
 
     const record = await saveBanner(data);

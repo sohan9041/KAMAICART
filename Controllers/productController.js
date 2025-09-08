@@ -10,17 +10,11 @@ import { ProductVariantAttributeValue } from "../Models/ProductVariantAttributeV
 import { ProductImage } from "../Models/productImageModel.js";
 import { Attribute } from "../Models/attributeModel.js";
 import { AttributeValue } from "../Models/attributeValueModel.js";
+import { Wishlist } from "../Models/wishlistModel.js";
+import { Category } from "../Models/cateogryModel.js";
 import apiResponse from "../Helper/apiResponse.js";
 
-// ✅ Add Product
-// export const addProduct = async (req, res) => {
-//   try {
-//     const record = await createProduct(req.body);
-//     return apiResponse.successResponseWithData(res, "Product created", record);
-//   } catch (err) {
-//     return apiResponse.ErrorResponse(res, err.message);
-//   }
-// };
+import appapiResponse from "../Helper/appapiResponse.js";
 
 const normalizeNumber = (val, defaultVal = 0) => {
   if (val === undefined || val === null || val === "") return defaultVal;
@@ -31,81 +25,74 @@ export const addProduct = async (req, res) => {
   const t = await Product.sequelize.transaction();
 
   try {
-    const {
-      variants,
-      stock,
-      shipping_cost,
-      selling_price,
-      price,
-      ...productData
-    } = req.body;
+    const { variants, stock, shipping_cost, selling_price, price, ...productData } = req.body;
+
     // ✅ 1. Create product
     const product = await Product.create(productData, { transaction: t });
 
-    // ✅ 2. Save images if provided
+    // ✅ 2. Save product-level images
+    const productFiles = req.files.filter(f => f.fieldname === "images");
+    if (productFiles.length > 0) {
+      const imageRecords = productFiles.map(f => ({
+        product_id: product.id,
+        image_url: `/uploads/products/${f.filename}`,
+      }));
+      await ProductImage.bulkCreate(imageRecords, { transaction: t });
+    }
 
-    if (req.files && req.files.length > 0) {
-  const imageRecords = req.files.map(file => ({
-    product_id: product.id,
-    image_url: `/uploads/products/${file.filename}`, // store path in DB
-  }));
-  await ProductImage.bulkCreate(imageRecords, { transaction: t });
-}
-
-    // ✅ 3. If variants exist → loop & insert
+    // ✅ 3. Parse variants
     let variantsArray = [];
     try {
-  variantsArray = typeof variants === "string" ? JSON.parse(variants) : variants;
-} catch (err) {
-  console.error("Failed to parse variants:", err);
-  variantsArray = [];
-}
+      variantsArray = typeof variants === "string" ? JSON.parse(variants) : variants;
+    } catch (err) {
+      console.error("Failed to parse variants:", err);
+      variantsArray = [];
+    }
 
-    if (variantsArray && Array.isArray(variantsArray) && variantsArray.length > 0) {
+    if (variantsArray.length > 0) {
+      for (let i = 0; i < variantsArray.length; i++) {
+        const { attributes, ...variantInfo } = variantsArray[i];
 
-      for (const variantData of variantsArray) {
-        const { attributes, ...variantInfo } = variantData;
-
-        // Unique SKU per variant
-        const sku = `SKU-${product.id}-${Date.now()}-${Math.random()
-          .toString(36)
-          .substring(2, 6)
-          .toUpperCase()}`;
+        const sku = `SKU-${product.id}-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
         const variant = await ProductVariant.create(
-  {
-    ...variantInfo,
-    product_id: product.id,
-    sku,
-    price: normalizeNumber(variantInfo.price, 0.0),
-    selling_price: normalizeNumber(variantInfo.selling_price, 0.0),
-    stock: normalizeNumber(variantInfo.stock, 0),
-    shipping_cost: normalizeNumber(variantInfo.shipping_cost, 0.0),
-  },
-  { transaction: t }
-);
+          {
+            ...variantInfo,
+            product_id: product.id,
+            sku,
+            price: normalizeNumber(variantInfo.price, 0.0),
+            selling_price: normalizeNumber(variantInfo.selling_price, 0.0),
+            stock: normalizeNumber(variantInfo.stock, 0),
+            shipping_cost: normalizeNumber(variantInfo.shipping_cost, 0.0),
+          },
+          { transaction: t }
+        );
 
         // ✅ Variant attributes
         if (attributes && attributes.length > 0) {
-          const pvavRecords = attributes.map((attr) => ({
+          const pvavRecords = attributes.map(attr => ({
             product_id: product.id,
             variant_id: variant.id,
             attribute_id: attr.attribute_id,
             attribute_value_id: attr.attribute_value_id,
           }));
+          await ProductVariantAttributeValue.bulkCreate(pvavRecords, { transaction: t });
+        }
 
-          await ProductVariantAttributeValue.bulkCreate(pvavRecords, {
-            transaction: t,
-          });
+        // ✅ Variant images
+        const variantFiles = req.files.filter(f => f.fieldname === `variant_${i}_image`);
+        if (variantFiles.length > 0) {
+          const variantImageRecords = variantFiles.map(f => ({
+            product_id: product.id,
+            variant_id: variant.id,
+            image_url: `/uploads/products/${f.filename}`,
+          }));
+          await ProductImage.bulkCreate(variantImageRecords, { transaction: t });
         }
       }
     } else {
-      // ✅ Simple variant
-      const sku = `SKU-${product.id}-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(2, 6)
-        .toUpperCase()}`;
-
+      // ✅ Simple product (no variants)
+      const sku = `SKU-${product.id}-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       await ProductVariant.create(
         {
           product_id: product.id,
@@ -121,22 +108,45 @@ export const addProduct = async (req, res) => {
     }
 
     await t.commit();
-    return apiResponse.successResponseWithData(
-      res,
-      "Product (with or without variants) created",
-      product
-    );
+    return apiResponse.successResponseWithData(res, "Product created with variants & images", product);
+
   } catch (err) {
     await t.rollback();
-    console.log(err);
+    console.error(err);
     return apiResponse.ErrorResponse(res, err.message);
   }
 };
 
 export const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.findAll({
+    // Pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Fetch with categories + variants + images
+    const { count, rows: products } = await Product.findAndCountAll({
+      where: { is_deleted: false },
       include: [
+        {
+          model: Category,
+          as: "category", // 🔑 must match association
+          attributes: ["id", "name"],
+          include: [
+            {
+              model: Category,
+              as: "parent", // subCategory
+              attributes: ["id", "name"],
+              include: [
+                {
+                  model: Category,
+                  as: "parent", // mainCategory
+                  attributes: ["id", "name"],
+                },
+              ],
+            },
+          ],
+        },
         { model: ProductImage, as: "images" },
         {
           model: ProductVariant,
@@ -146,37 +156,56 @@ export const getAllProducts = async (req, res) => {
               model: ProductVariantAttributeValue,
               as: "attributes",
               include: [
-                {
-                  model: Attribute,
-                  as: "attribute",
-                  attributes: ["id", "name", "input_type"],
-                },
-                {
-                  model: AttributeValue,
-                  as: "attribute_value",
-                  attributes: ["id", "value"],
-                },
+                { model: Attribute, as: "attribute", attributes: ["id", "name", "input_type"] },
+                { model: AttributeValue, as: "attribute_value", attributes: ["id", "value"] },
               ],
             },
           ],
         },
       ],
+      limit,
+      offset,
+      distinct: true,
+      order: [["createdAt", "DESC"]],
     });
+
+    // Transform categories into main/sub/child
+    const formattedProducts = products.map((p) => {
+  const json = p.toJSON();
+
+  // Extract names
+  const childCategory_name = json.category?.name || null;
+  const subCategory_name = json.category?.parent?.name || null;
+  const mainCategory_name = json.category?.parent?.parent?.name || null;
+
+  // Delete category from response
+  delete json.category;
+
+  return {
+    ...json,
+    childCategory_name,
+    subCategory_name,
+    mainCategory_name,
+  };
+});
 
     return apiResponse.successResponseWithData(
       res,
-      "Fetched products with variants & attributes successfully",
-      products
+      "Fetched products successfully",
+      formattedProducts,
+      {
+        totalItems: count,
+        currentPage: page,
+        totalPages: Math.ceil(count / limit),
+        pageSize: limit,
+      }
     );
   } catch (err) {
     console.error("Error in getAllProductsAPI:", err);
-
-    return apiResponse.ErrorResponse(
-      res,
-      "Failed to fetch products: " + err.message
-    );
+    return apiResponse.ErrorResponse(res, "Failed to fetch products: " + err.message);
   }
 };
+
 
 export const getProductById = async (req, res) => {
   try {
@@ -385,5 +414,134 @@ export const deleteProductById = async (req, res) => {
     return apiResponse.successResponseWithData(res, "Deleted successfully");
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+export const getAppProductList = async (req, res) => {
+  try {
+    // ✅ Logged-in user ID (from auth middleware or query param)
+    const userId = req.user?.id || null;
+console.log(req.user?.id);
+    // Pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // ✅ Get user wishlist product_ids only if logged in
+    let wishlistProductIds = [];
+    if (userId) {
+      const wishlistItems = await Wishlist.findAll({
+        where: { user_id: userId },
+        attributes: ["product_id"],
+      });
+      wishlistProductIds = wishlistItems.map((w) => w.product_id);
+    }
+
+    const { count, rows: products } = await Product.findAndCountAll({
+      where: { is_deleted: false },
+      attributes: ["id", "name"],
+      include: [
+        {
+          model: ProductImage,
+          as: "images",
+          where: { is_deleted: false },
+          required: false,
+          attributes: ["id", "image_url", "variant_id", "is_primary"],
+        },
+        {
+          model: ProductVariant,
+          as: "variants",
+          where: { is_deleted: false },
+          required: false,
+          attributes: [
+            "id",
+            "sku",
+            "price",
+            "stock",
+            "is_default",
+            "shipping_cost",
+            "selling_price",
+          ],
+          include: [
+            {
+              model: ProductVariantAttributeValue,
+              as: "attributes",
+              include: [
+                {
+                  model: Attribute,
+                  as: "attribute",
+                  attributes: ["id", "name", "input_type"],
+                },
+                {
+                  model: AttributeValue,
+                  as: "attribute_value",
+                  attributes: ["id", "value"],
+                },
+              ],
+            },
+            {
+              model: ProductImage,
+              as: "variant_images",
+              where: { is_deleted: false },
+              required: false,
+              attributes: ["id", "image_url", "is_primary"],
+            },
+          ],
+        },
+      ],
+      limit,
+      offset,
+      distinct: true,
+      order: [["id", "DESC"]],
+    });
+
+    // ✅ Transform response for app
+    const formattedProducts = products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      is_wishlist: userId ? wishlistProductIds.includes(p.id) : false, // ✅ false if not logged in
+      thumbnail:
+        p.images.find((img) => img.is_primary)?.image_url ||
+        p.images[0]?.image_url ||
+        null,
+      gallery: p.images.map((img) => img.image_url),
+      variants: p.variants.map((v) => ({
+        id: v.id,
+        sku: v.sku,
+        price: v.price,
+        selling_price: v.selling_price,
+        shipping_cost: v.shipping_cost,
+        stock: v.stock,
+        is_default: v.is_default,
+        attributes: v.attributes.map((attr) => ({
+          attribute_id: attr.attribute.id,
+          attribute_name: attr.attribute.name,
+          value_id: attr.attribute_value.id,
+          value: attr.attribute_value.value,
+        })),
+        images: v.variant_images.map((vi) => ({
+          id: vi.id,
+          url: vi.image_url,
+          is_primary: vi.is_primary,
+        })),
+      })),
+    }));
+
+    // ✅ Pagination metadata
+    const totalPages = Math.ceil(count / limit);
+
+    return appapiResponse.successResponseWithData(
+      res,
+      "Product list fetched successfully",
+      formattedProducts,
+      {
+        total: count,
+        page,
+        limit,
+        totalPages,
+      }
+    );
+  } catch (error) {
+    return appapiResponse.ErrorResponse(res, error.message);
   }
 };

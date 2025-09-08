@@ -1,29 +1,21 @@
 import { DataTypes } from "sequelize";
 import {sequelize} from "../Config/connectDb.js";
 
-export const Banner = sequelize.define("Banner", {
+export const Brand = sequelize.define("Brand", {
   id: {
     type: DataTypes.INTEGER,
-    autoIncrement: true,
     primaryKey: true,
+    autoIncrement: true,
   },
-  image: {
+  name: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  title: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  type: {
-  type: DataTypes.ENUM("web", "app"),
-  allowNull: false,
-},
   is_delete: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
 }, {
-  tableName: "banners",
+  tableName: "brands",
   timestamps: true,
 });

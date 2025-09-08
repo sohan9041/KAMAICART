@@ -48,7 +48,7 @@ export const User = sequelize.define("user", {
     onDelete: "CASCADE",
   },
   status: {
-    type: DataTypes.ENUM("active", "inactive"),
+    type: DataTypes.ENUM("active", "inactive","delete"),
     allowNull: false,
     defaultValue: "active",
   },
