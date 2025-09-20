@@ -6,7 +6,8 @@ import {
   getProductById,
   updateProductById,
   deleteProductById,
-  getAppProductList
+  getAppProductList,
+  removeAttributeInProduct
 } from "../Controllers/productController.js";
 
 import {
@@ -22,16 +23,21 @@ const router = express.Router();
 
 router.post("/home-list",optionalAuth, getAppProductList); 
 
+
 router.post("/wishlist", verifyUser, addToWishlist);
 router.get("/wishlist", verifyUser, getWishlist);
 router.delete("/wishlist/:id", verifyUser, removeFromWishlist);
 
 // Product Routes
+router.post("/removeAttributeInProduct", cookiesverifyUser, removeAttributeInProduct);
+
 router.post("/",uploadProductImages, cookiesverifyUser, addProduct);
 router.get("/", cookiesverifyUser, getAllProducts);
 
 router.get("/:id", cookiesverifyUser, getProductById);
 router.put("/:id",uploadProductImages, cookiesverifyUser, updateProductById);
 router.delete("/:id", cookiesverifyUser, deleteProductById);
+
+
 
 export default router;

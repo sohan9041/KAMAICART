@@ -34,7 +34,7 @@ export const getBannerList = async (req, res) => {
     const updatedRecords = records.map((banner) => {
       return {
         ...banner.dataValues,
-        image: process.env.BASE_URL + banner.image,
+        image: banner.image,
       };
     });
 
@@ -55,7 +55,7 @@ export const getBannerByType = async (req, res) => {
 
     const updatedRecords = records.map((banner) => ({
       ...banner.dataValues,
-      image: process.env.BASE_URL + banner.image,
+      image: banner.image,
     }));
 
     return apiResponse.successResponseWithData(res, "Fetched successfully", updatedRecords);
@@ -73,7 +73,7 @@ export const getBannerByTypeapp = async (req, res) => {
     });
     const updatedRecords = records.map((banner) => ({
       ...banner.dataValues,
-      image: process.env.BASE_URL + banner.image,
+      image: banner.image,
     }));
 
     return appapiResponse.successResponseWithData(res, "Fetched successfully", updatedRecords);
@@ -88,7 +88,7 @@ export const deleteBanner = async (req, res) => {
   try {
     const record = await softDeleteBanner(req.params.id);
     if (!record) return apiResponse.notFoundResponse(res, "Banner not found", []);
-    return apiResponse.successResponse(res, "Deleted successfully");
+    return apiResponse.successResponseWithData(res, "Deleted successfully");
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }

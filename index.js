@@ -21,6 +21,8 @@ import productVariantRoutes from "./Routes/productVariantRoutes.js";
 import bannerRoutes from "./Routes/bannerRoutes.js";
 import brandRoutes from "./Routes/brandRoutes.js";
 import sellerRoutes from "./Routes/sellerRoutes.js";
+import stateCityRoutes from "./Routes/stateCityRoutes.js";
+
 
 const app = express();
 app.use(cookieParser());
@@ -51,6 +53,7 @@ app.use(
 
 app.use(express.json());
 
+app.use("/", stateCityRoutes);
 app.use("/product", productRoutes);
 app.use("/user", apiRoutes);
 app.use("/user", userAddressRoutes);
@@ -65,6 +68,8 @@ app.use("/attribute", attributeRoutes);
 app.use("/productVariant", productVariantRoutes);
 app.use("/banner", bannerRoutes);
 app.use("/brand", brandRoutes);
+
+
 app.use(morgan("dev"));
 app.use(
   helmet({

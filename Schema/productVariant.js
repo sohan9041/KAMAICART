@@ -2,7 +2,6 @@ import { DataTypes } from "sequelize";
 import {sequelize} from "../Config/connectDb.js"; // your sequelize instance
 import ProductVariantAttributeValue from "./productVariantAttributeValue.js";
 import ProductImage from "./productImage.js";
-import Product from "./product.js";
 
 
 const ProductVariant = sequelize.define("ProductVariant", {

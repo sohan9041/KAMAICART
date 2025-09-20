@@ -36,7 +36,7 @@ export const User = sequelize.define("user", {
   },
   password: { 
     type: DataTypes.STRING, 
-    allowNull: false 
+    allowNull: true,  
   },
   role_id: { 
     type: DataTypes.INTEGER,
@@ -48,7 +48,7 @@ export const User = sequelize.define("user", {
     onDelete: "CASCADE",
   },
   status: {
-    type: DataTypes.ENUM("active", "inactive","delete"),
+    type: DataTypes.ENUM("active", "inactive","delete","pending"),
     allowNull: false,
     defaultValue: "active",
   },

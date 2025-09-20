@@ -13,6 +13,7 @@ const storage = new CloudinaryStorage({
     allowed_formats: ["jpg", "jpeg", "png"],
   },
 });
+
 export const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // ✅ 5 MB limit
@@ -119,6 +120,13 @@ const Productstorage = multer.diskStorage({
   },
 });
 
+const seller = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "uploads/sellers/"),
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  }
+});
+
 // multer instance
 export const uploadProductImages = multer({ storage: Productstorage }).any();
 
@@ -130,3 +138,11 @@ export const uploadCategoryImage = multer({ storage: Category, fileFilterForRole
 export const uploadIcon = multer({ storage: Icon, fileFilterForRole });
 
 export const uploadSettingsImage = multer({ storageSetting, fileFilter });
+
+export const uploadSellerDocs = multer({ storage:seller }).fields([
+  { name: "shopImage", maxCount: 1 },
+  { name: "adharCard", maxCount: 1 },
+  { name: "panCard", maxCount: 1 },
+  { name: "gstCertificate", maxCount: 1 },
+  { name: "cancelCheck", maxCount: 1 },
+]);

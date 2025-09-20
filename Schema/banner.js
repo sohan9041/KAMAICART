@@ -10,6 +10,11 @@ export const Banner = sequelize.define("Banner", {
   image: {
     type: DataTypes.STRING,
     allowNull: false,
+     get() {
+        const rawValue = this.getDataValue("image");
+        if (!rawValue) return null;
+        return `${process.env.BASE_URL}${rawValue}`;
+      },
   },
   title: {
     type: DataTypes.STRING,
