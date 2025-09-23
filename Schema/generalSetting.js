@@ -14,10 +14,20 @@ export const GeneralSetting = sequelize.define("general_settings", {
   logo: {
     type: DataTypes.STRING,
     allowNull: true,
+    get() {
+        const rawValue = this.getDataValue("logo");
+        if (!rawValue) return null;
+        return `${process.env.BASE_URL}${rawValue}`;
+    }, 
   },
   favicon: {
     type: DataTypes.STRING,
     allowNull: true,
+    get() {
+        const rawValue = this.getDataValue("favicon");
+        if (!rawValue) return null;
+        return `${process.env.BASE_URL}${rawValue}`;
+    }, 
   },
   email: {
     type: DataTypes.STRING,

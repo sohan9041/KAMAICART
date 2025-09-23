@@ -109,6 +109,7 @@ export const getSellerList = async (req, res) => {
       email: req.query.email,
       phoneno: req.query.phoneno,
       status: req.query.status,
+      role_id: req.query.role_id
     };
 
     const { count, rows } = await getAllSellers(page, limit, filters);
@@ -400,5 +401,47 @@ export const updateProfile = async (req, res) => {
     return apiResponse.ErrorResponse(res, err.message);
   }
 };
+
+export const genratePassword = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Email and new password are required"
+      );
+    }
+
+    // ✅ Fetch user only if role_id is 2 or 3
+    const user = await User.findOne({
+      where: {
+        email,
+        role_id: [2, 3], // 👈 Sequelize will treat this as IN [2,3]
+      },
+    });
+
+    if (!user) {
+      return apiResponse.notFoundResponse(res, "User not found or not allowed");
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await user.update({
+      password: hashedPassword,
+      otp: null,
+      otp_expiry: null,
+    });
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Password updated successfully"
+    );
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
 
 

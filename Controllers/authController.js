@@ -434,9 +434,7 @@ export const AppSignin = async (req, res) => {
         email: user.email,
         phone: user.phoneno,
         role: user.role_id,
-        profileImage: user.profileImage
-          ? process.env.BASE_URL + user.profileImage
-          : "",
+        profileImage: user.profileImage,
       },
     });
   } catch (err) {
@@ -466,9 +464,7 @@ export const AppProfile = async (req, res) => {
       email: user.email,
       phone: user.phoneno,
       role: user.role_id,
-      profileImage: user.profileImage
-        ? process.env.BASE_URL + user.profileImage
-        : "",
+      profileImage: user.profileImage,
     });
   } catch (err) {
     return appapiResponse.forbiddenResponse(res, "Invalid or expired token");
@@ -496,9 +492,7 @@ export const uploadUserImage = async (req, res) => {
         email: user.email,
         phone: user.phoneno,
         role: user.role_id,
-        profileImage: user.profileImage
-          ? process.env.BASE_URL + user.profileImage
-          : "",
+        profileImage: user.profileImage,
       }
     );
   } catch (error) {
@@ -523,7 +517,7 @@ export const AppUpdateProfile = async (req, res) => {
       email: user.email,
       phone: user.phoneno,
       role: user.role_id,
-      profileImage: process.env.BASE_URL + user.profileImage,
+      profileImage: user.profileImage,
     });
   } catch (err) {
     return appapiResponse.ErrorResponse(res, err.message);

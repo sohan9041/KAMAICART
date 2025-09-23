@@ -6,9 +6,19 @@ export const saveGeneralSetting = async (req, res) => {
   try {
     let data = { ...req.body };
 
-    // check if an image file is uploaded
-    if (req.file) {
-      data.logo = `/uploads/settings/${req.file.filename}`;
+    // If logo uploaded
+    if (req.files?.logo) {
+      data.logo = `/uploads/settings/${req.files.logo[0].filename}`;
+    } else {
+      delete data.logo; // prevent overwriting with null/undefined
+    }
+console.log(req.files?.favicon);
+console.log(req.files);
+    // If favicon uploaded
+    if (req.files?.favicon) {
+      data.favicon = `/uploads/settings/${req.files.favicon[0].filename}`;
+    } else {
+      delete data.favicon;
     }
 
     const setting = await saveSetting(data);
@@ -21,10 +31,10 @@ export const saveGeneralSetting = async (req, res) => {
   } catch (error) {
     console.error("Error saving settings:", error.message);
     return apiResponse.ErrorResponse(
-  res,
-  "Failed to save general settings",
-  error.message
-);
+      res,
+      "Failed to save general settings",
+      error.message
+    );
   }
 };
 
@@ -40,16 +50,16 @@ export const getGeneralSetting = async (req, res) => {
     // Attach full URL for logo/image paths
     const baseUrl = process.env.BASE_URL;
 
-    const updatedSetting = {
-      ...setting.toJSON(), // if it's Sequelize/Mongoose instance
-      logo: setting.logo ? `${baseUrl}${setting.logo}` : null,
-      favicon:setting.favicon ? `${baseUrl}${setting.favicon}` : null,
-    };
+    // const updatedSetting = {
+    //   ...setting.toJSON(), // if it's Sequelize/Mongoose instance
+    //   logo: setting.logo,
+    //   favicon:setting.favicon,
+    // };
 
     return apiResponse.successResponseWithData(
       res,
       "General settings fetched successfully",
-      updatedSetting
+      setting
     );
   } catch (error) {
     console.error("Error fetching settings:", error);

@@ -25,6 +25,11 @@ export const User = sequelize.define("user", {
    profileImage: { 
     type: DataTypes.STRING, 
     allowNull: true, 
+    get() {
+        const rawValue = this.getDataValue("profileImage");
+        if (!rawValue) return null;
+        return `${process.env.BASE_URL}${rawValue}`;
+    },
   },
   otp: { 
     type: DataTypes.STRING, 

@@ -137,7 +137,7 @@ export const uploadCategoryImage = multer({ storage: Category, fileFilterForRole
 
 export const uploadIcon = multer({ storage: Icon, fileFilterForRole });
 
-export const uploadSettingsImage = multer({ storageSetting, fileFilter });
+export const uploadSettingsImage = multer({ storage:storageSetting, fileFilter });
 
 export const uploadSellerDocs = multer({ storage:seller }).fields([
   { name: "shopImage", maxCount: 1 },

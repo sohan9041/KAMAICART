@@ -37,19 +37,34 @@ export const saveUser = async (data) => {
 };
 
 // 🔹 Get All Users (Paginated, only role_id = 4)
-export const getAllUsers = async (page, limit) => {
+export const getAllUsers = async (page, limit, filters) => {
   const offset = (page - 1) * limit;
+
+  let where = { role_id: 4 };
+
+  // Apply filters dynamically
+  if (filters.name) {
+    where.name = { [Op.like]: `%${filters.name}%` };
+  }
+  if (filters.email) {
+    where.email = { [Op.like]: `%${filters.email}%` };
+  }
+  if (filters.phoneno) {
+    where.phoneno = { [Op.like]: `%${filters.phoneno}%` };
+  }
+  if (filters.status) {
+    where.status = filters.status; // exact match: "active" / "inactive"
+  } 
+
   return await User.findAndCountAll({
-    where: {
-      role_id: 4,
-      status: ['active', 'inactive'] 
-    },
+    where,
     limit,
     offset,
     order: [["id", "DESC"]],
-    attributes: { exclude: ["password"] } // don’t send password
+    attributes: { exclude: ["password"] }, // don’t send password
   });
 };
+
 
 // 🔹 Get User by ID
 export const getUserByIdModel = async (id) => {

@@ -10,7 +10,13 @@ export const saveSeller = async (data) => {
 export const getAllSellers = async (page = 1, limit = 10, filters = {}) => {
   const offset = (page - 1) * limit;
 
-  let where = { role_id: [2, 3] }; // base condition
+  let where = {};
+
+  if (filters.role_id) {
+    where.role_id = filters.role_id; // exact match if provided
+  } else {
+    where.role_id = [2, 3]; // default to both seller roles
+  }
 
   if (filters.name) {
     where.name = { [Op.like]: `%${filters.name}%` };

@@ -8,7 +8,8 @@ import {
   toggleSellerStatus,
   sellerRegistration,
   changePassword,
-  updateProfile
+  updateProfile,
+  genratePassword
 } from "../Controllers/sellerController.js";
 import { verifyUser, cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
 import { uploadSellerDocs } from "../Middleware/imageUploadMiddleware.js";
@@ -27,6 +28,7 @@ router.delete("/:id",cookiesverifyUser, deleteSeller);
 router.post("/registration",uploadSellerDocs, sellerRegistration);
 router.post("/change-password",cookiesverifyUser, changePassword);
 router.post("/update-profile",cookiesverifyUser, updateProfile);
+router.post("/generate-password", genratePassword);
 
 
 export default router;

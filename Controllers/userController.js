@@ -87,7 +87,15 @@ export const getUserList = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
-    const { count, rows } = await getAllUsers(page, limit);
+    // Filters
+    const filters = {
+      name: req.query.name || null,
+      email: req.query.email || null,
+      phoneno: req.query.phoneno || null,
+      status: req.query.user_status || null,
+    };
+
+    const { count, rows } = await getAllUsers(page, limit, filters);
 
     return apiResponse.successResponseWithData(res, "Fetched successfully", rows, {
       totalItems: count,
@@ -99,6 +107,7 @@ export const getUserList = async (req, res) => {
     return apiResponse.ErrorResponse(res, err.message);
   }
 };
+
 
 // 🔹 Get User by ID
 export const getUserById = async (req, res) => {

@@ -22,6 +22,8 @@ import bannerRoutes from "./Routes/bannerRoutes.js";
 import brandRoutes from "./Routes/brandRoutes.js";
 import sellerRoutes from "./Routes/sellerRoutes.js";
 import stateCityRoutes from "./Routes/stateCityRoutes.js";
+import adminRoutes from "./Routes/adminRoutes.js";
+
 
 
 const app = express();
@@ -54,6 +56,8 @@ app.use(
 app.use(express.json());
 
 app.use("/", stateCityRoutes);
+app.use("/admin", adminRoutes);
+
 app.use("/product", productRoutes);
 app.use("/user", apiRoutes);
 app.use("/user", userAddressRoutes);
