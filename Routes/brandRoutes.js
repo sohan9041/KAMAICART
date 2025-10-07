@@ -7,26 +7,28 @@ import {
   getBrandById,
   deleteBrand,
 } from "../Controllers/brandController.js";
-import { verifyUser, cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { cookiesVerifyUser } from "../Middleware/verifyAuthMiddleware.js";
 
 const router = express.Router();
 // -----------------------
 // Brand Routes
 // -----------------------
+router.get("/web", getBrandList);
 
 // Create brand
-router.post("/", cookiesverifyUser, createBrand);
+router.post("/", cookiesVerifyUser, createBrand);
 
 // Update brand
-router.put("/:id", cookiesverifyUser, updateBrand);
+router.put("/:id", cookiesVerifyUser, updateBrand);
 
 // Get all brands
-router.get("/", cookiesverifyUser, getBrandList);
+router.get("/", cookiesVerifyUser, getBrandList);
 
 // Get brand by ID
-router.get("/:id", cookiesverifyUser, getBrandById);
+router.get("/:id", cookiesVerifyUser, getBrandById);
 
 // Delete brand
-router.delete("/:id", cookiesverifyUser, deleteBrand);
+router.delete("/:id", cookiesVerifyUser, deleteBrand);
+
 
 export default router;

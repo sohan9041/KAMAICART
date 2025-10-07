@@ -43,7 +43,7 @@ export const deleteWhyChoose = async (req, res) => {
   try {
     const record = await softDeleteWhyChoose(req.params.id);
     if (!record) return apiResponse.notFoundResponse(res, "Record not found", []);
-    return apiResponse.successResponse(res, "Deleted successfully");
+    return apiResponse.successResponseWithData(res, "Deleted successfully",{id:req.params.id});
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }

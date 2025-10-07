@@ -5,13 +5,13 @@ import {
   getAllRoleFeatures,
   deleteRoleFeatureById,
 } from "../Controllers/roleFeatureController.js";
-import { verifyUser,cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { cookiesVerifyUser } from "../Middleware/verifyAuthMiddleware.js";
 
 const router = express.Router();
 
-router.post("/",cookiesverifyUser, createOrUpdateRoleFeature); // Add / Update
-router.get("/",cookiesverifyUser, getAllRoleFeatures);         // Get all
-router.get("/:id",cookiesverifyUser, getRoleFeatureById);      // Get by ID
-router.delete("/:id",cookiesverifyUser, deleteRoleFeatureById);// Delete
+router.post("/",cookiesVerifyUser, createOrUpdateRoleFeature); // Add / Update
+router.get("/",cookiesVerifyUser, getAllRoleFeatures);         // Get all
+router.get("/:id",cookiesVerifyUser, getRoleFeatureById);      // Get by ID
+router.delete("/:id",cookiesVerifyUser, deleteRoleFeatureById);// Delete
 
 export default router;

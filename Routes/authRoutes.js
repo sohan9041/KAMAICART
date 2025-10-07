@@ -4,7 +4,7 @@ import { Signup, Signin, VerifyOtp, sendResetPassOTP, verifyResetOTP,
     getSellers,getCustomers,updateProfile,RefreshToken,
     webforgotPassword,webverifyOtp,webresetPassword,webupdatePassword
  } from "../Controllers/authController.js";
-import { verifyUser,cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { cookiesVerifyUser } from "../Middleware/verifyAuthMiddleware.js";
 
 export const router = express.Router();
 
@@ -14,19 +14,19 @@ router.post("/signin", Signin);
 router.post("/send-reset-otp", sendResetPassOTP);
 router.post("/verify-reset-otp", verifyResetOTP);
 //router.post("/reset-password", resetPassword);
-router.get("/profile",cookiesverifyUser, profile);
-router.post("/logout",cookiesverifyUser, Logout);
-router.post("/update-profile",cookiesverifyUser, updateProfile);
+router.get("/profile",cookiesVerifyUser, profile);
+router.post("/logout",cookiesVerifyUser, Logout);
+router.post("/update-profile",cookiesVerifyUser, updateProfile);
 
 
-router.get("/sellers",cookiesverifyUser, getSellers);
-router.get("/customers",cookiesverifyUser, getCustomers);
+router.get("/sellers",cookiesVerifyUser, getSellers);
+router.get("/customers",cookiesVerifyUser, getCustomers);
 router.post("/refresh", RefreshToken);
 
 router.post("/forgot-password", webforgotPassword);
 router.post("/verify-otp", webverifyOtp);
 router.post("/reset-password", webresetPassword);
-router.post("/update-password",cookiesverifyUser, webupdatePassword);
+router.post("/update-password",cookiesVerifyUser, webupdatePassword);
 
 
 // router.get("/me", Logininfo);

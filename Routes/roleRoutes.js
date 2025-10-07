@@ -7,18 +7,18 @@ getAllRoles,
 getAllRolesforWeb,
 deleteRole
 } from "../Controllers/roleController.js";
-import { verifyUser,cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { cookiesVerifyUser } from "../Middleware/verifyAuthMiddleware.js";
 import { uploadIcon } from "../Middleware/imageUploadMiddleware.js";
 
 const router = express.Router();
 
 
-router.get("/",cookiesverifyUser, getAllRoles);
+router.get("/",cookiesVerifyUser, getAllRoles);
 router.get("/get", getAllRolesforWeb);
-router.post("/",cookiesverifyUser,uploadIcon.single("icon"), createOrUpdateRole);
-router.get("/:id",cookiesverifyUser, getRoleById);
-router.put("/:id",cookiesverifyUser, createOrUpdateRole); // update same as createOrUpdate
-router.delete("/:id",cookiesverifyUser, deleteRole);
+router.post("/",cookiesVerifyUser,uploadIcon.single("icon"), createOrUpdateRole);
+router.get("/:id",cookiesVerifyUser, getRoleById);
+router.put("/:id",cookiesVerifyUser, createOrUpdateRole); // update same as createOrUpdate
+router.delete("/:id",cookiesVerifyUser, deleteRole);
 
 
 export default router;

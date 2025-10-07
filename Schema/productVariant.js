@@ -3,7 +3,6 @@ import {sequelize} from "../Config/connectDb.js"; // your sequelize instance
 import ProductVariantAttributeValue from "./productVariantAttributeValue.js";
 import ProductImage from "./productImage.js";
 
-
 const ProductVariant = sequelize.define("ProductVariant", {
   id: {
     type: DataTypes.INTEGER,

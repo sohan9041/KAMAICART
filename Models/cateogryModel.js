@@ -277,4 +277,49 @@ export const GetInfoOnlySubSubCategory = async () => {
   });
 };
 
+export const GetMegaMenuData = async () => {
+  const categories = await Category.findAll({
+    where: { parent_id: null, is_delete: false },
+    include: [
+      {
+        model: Category,
+        as: "children",
+        where: { is_delete: false },
+        required: false,
+        include: [
+          {
+            model: Category,
+            as: "children",
+            where: { is_delete: false },
+            required: false,
+          },
+        ],
+      },
+    ],
+    order: [["priority", "ASC"]],
+  });
+
+  // 🧩 Format into structured mega menu
+  return categories.map((cat) => ({
+    label: cat.name,
+    slug: cat.slug,
+    path: `/${cat.slug}`, // main category path
+    megaMenu: (cat.children || [])
+      .sort((a, b) => (a.priority || 0) - (b.priority || 0))
+      .map((sub) => ({
+        title: sub.name,
+        slug: sub.slug,
+        path: `/${cat.slug}/${sub.slug}`, // subcategory path
+        items: (sub.children || [])
+          .sort((a, b) => (a.priority || 0) - (b.priority || 0))
+          .map((child) => ({
+            name: child.name,
+            slug: child.slug,
+            path: `/${cat.slug}/${sub.slug}/${child.slug}`, // child category path
+          })),
+      })),
+  }));
+};
+
+
 export { Category };

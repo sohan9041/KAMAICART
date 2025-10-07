@@ -14,8 +14,7 @@ import { AttributeValue } from "../Models/attributeValueModel.js";
 import { Wishlist } from "../Models/wishlistModel.js";
 import { Category } from "../Models/cateogryModel.js";
 import apiResponse from "../Helper/apiResponse.js";
-import { Op } from "sequelize";
-
+import { Op,Sequelize } from "sequelize";
 import appapiResponse from "../Helper/appapiResponse.js";
 
 const normalizeNumber = (val, defaultVal = 0) => {
@@ -391,265 +390,6 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// export const getProductById = async (req, res) => {
-//   try {
-//     const product = await Product.findOne({
-//       where: { id: req.params.id },
-//       include: [
-//         { model: ProductImage, as: "images" },
-//         {
-//           model: ProductVariant,
-//           as: "variants",
-//           include: [
-//             {
-//               model: ProductVariantAttributeValue,
-//               as: "attributes",
-//               include: [
-//                 {
-//                   model: Attribute,
-//                   as: "attribute",
-//                   attributes: ["id", "name", "input_type"],
-//                 },
-//                 {
-//                   model: AttributeValue,
-//                   as: "attribute_value",
-//                   attributes: ["id", "value"],
-//                 },
-//               ],
-//             },
-//           ],
-//         },
-//       ],
-//     });
-//     let attributes = {};
-//     product.variants.forEach(variant => {
-//       variant.attributes.forEach(attr => {
-//       const key = attr.attribute.name; // e.g. "color" or "size"
-
-//       if (!attributes[key]) {
-//         attributes[key] = [];
-//       }
-
-//       // avoid duplicates
-//       if (!attributes[key].some(a => a.id === attr.attribute_value.id)) {
-//         attributes[key].push({
-//           id: attr.attribute_value.id,
-//           value: attr.attribute_value.value,
-//           image: attr.attribute_value.image || null, // include image if exists
-//         });
-//       }
-//     });
-//   });
-
-//     if (!product) {
-//       return apiResponse.notFoundResponse(res, "Product not found", []);
-//     }
-
-//     return apiResponse.successResponseWithData(
-//       res,
-//       "Fetched product with variants & attributes successfully",
-//       product
-//     );
-//   } catch (err) {
-//     console.error("Error in getProductByIdAPI:", err);
-
-//     return apiResponse.ErrorResponse(
-//       res,
-//       "Failed to fetch product: " + err.message
-//     );
-//   }
-// };
-
-// ✅ Update Product
-// export const updateProductById = async (req, res) => {
-//   const t = await Product.sequelize.transaction();
-
-//   try {
-//     const { id } = req.params;
-//     const { variants, image_ids_to_delete, stock, shipping_cost, selling_price, price, ...productData } = req.body;
-
-//     // 1️⃣ Find product
-//     const product = await Product.findByPk(id, { transaction: t });
-//     if (!product) {
-//       await t.rollback();
-//       return apiResponse.notFoundResponse(res, "Product not found", []);
-//     }
-
-//     // 2️⃣ Update product info (only product-level fields)
-//     await product.update(productData, { transaction: t });
-
-//     // 3️⃣ Delete selected images
-//     if (Array.isArray(image_ids_to_delete) && image_ids_to_delete.length > 0) {
-//       await ProductImage.destroy({
-//         where: { id: image_ids_to_delete, product_id: id },
-//         transaction: t,
-//       });
-//     }
-
-//     // 4️⃣ Add new product-level images
-//     const productFiles = (req.files || []).filter(f => f.fieldname === "images");
-//     if (productFiles.length > 0) {
-//       const imageRecords = productFiles.map(f => ({
-//         product_id: id,
-//         image_url: `/uploads/products/${f.filename}`,
-//       }));
-//       await ProductImage.bulkCreate(imageRecords, { transaction: t });
-//     }
-
-//     // 5️⃣ Parse variants
-//     let variantsArray = [];
-//     try {
-//       variantsArray = typeof variants === "string" ? JSON.parse(variants) : variants;
-//     } catch (err) {
-//       console.error("Failed to parse variants:", err);
-//       variantsArray = [];
-//     }
-
-//     if (Array.isArray(variantsArray) && variantsArray.length > 0) {
-//       // 🔄 Update or insert multiple variants
-//       for (let i = 0; i < variantsArray.length; i++) {
-//         const { id: variantId, attributes, sku, ...variantInfo } = variantsArray[i];
-//         let variant;
-
-//         if (variantId) {
-//           // 🔄 Update existing variant
-//           variant = await ProductVariant.findOne({
-//             where: { id: variantId, product_id: id },
-//             transaction: t,
-//           });
-
-//           if (variant) {
-//             await variant.update(
-//               {
-//                 ...variantInfo,
-//                 sku: sku || variant.sku,
-//                 price: normalizeNumber(variantInfo.price, variant.price),
-//                 selling_price: normalizeNumber(variantInfo.selling_price, variant.selling_price),
-//                 stock: normalizeNumber(variantInfo.stock, variant.stock),
-//                 shipping_cost: normalizeNumber(variantInfo.shipping_cost, variant.shipping_cost),
-//               },
-//               { transaction: t }
-//             );
-
-//             // 🔄 Update attributes
-//             if (attributes && attributes.length > 0) {
-//               await ProductVariantAttributeValue.destroy({
-//                 where: { variant_id: variant.id },
-//                 transaction: t,
-//               });
-
-//               const pvavRecords = attributes.map(attr => ({
-//                 product_id: id,
-//                 variant_id: variant.id,
-//                 attribute_id: attr.attribute_id,
-//                 attribute_value_id: attr.attribute_value_id,
-//               }));
-//               await ProductVariantAttributeValue.bulkCreate(pvavRecords, { transaction: t });
-//             }
-//           }
-//         } else {
-//           // ➕ Create new variant
-//           const newSku =
-//             sku ||
-//             `SKU-${id}-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-
-//           variant = await ProductVariant.create(
-//             {
-//               ...variantInfo,
-//               product_id: id,
-//               sku: newSku,
-//               price: normalizeNumber(variantInfo.price, 0.0),
-//               selling_price: normalizeNumber(variantInfo.selling_price, 0.0),
-//               stock: normalizeNumber(variantInfo.stock, 0),
-//               shipping_cost: normalizeNumber(variantInfo.shipping_cost, 0.0),
-//             },
-//             { transaction: t }
-//           );
-
-//           // ➕ Add attributes
-//           if (attributes && attributes.length > 0) {
-//             const pvavRecords = attributes.map(attr => ({
-//               product_id: id,
-//               variant_id: variant.id,
-//               attribute_id: attr.attribute_id,
-//               attribute_value_id: attr.attribute_value_id,
-//             }));
-//             await ProductVariantAttributeValue.bulkCreate(pvavRecords, { transaction: t });
-//           }
-//         }
-
-//         // 🔄 Add new variant-level images
-//         const variantFiles = (req.files || []).filter(f => f.fieldname === `variant_${i}_image`);
-//         if (variantFiles.length > 0) {
-//           const variantImageRecords = variantFiles.map(f => ({
-//             product_id: id,
-//             variant_id: variant.id,
-//             image_url: `/uploads/products/${f.filename}`,
-//           }));
-//           await ProductImage.bulkCreate(variantImageRecords, { transaction: t });
-//         }
-//       }
-//     } else {
-//       // 📌 Simple product case (update its first variant directly)
-//       const firstVariant = await ProductVariant.findOne({
-//         where: { product_id: id },
-//         order: [["id", "ASC"]],
-//         transaction: t,
-//       });
-
-//       if (firstVariant) {
-//         await firstVariant.update(
-//           {
-//             price: normalizeNumber(price, firstVariant.price),
-//             selling_price: normalizeNumber(selling_price, firstVariant.selling_price),
-//             stock: normalizeNumber(stock, firstVariant.stock),
-//             shipping_cost: normalizeNumber(shipping_cost, firstVariant.shipping_cost),
-//           },
-//           { transaction: t }
-//         );
-//       }
-//     }
-
-//     // ✅ Commit after all success
-//     await t.commit();
-
-//     // 6️⃣ Fetch updated product with relations
-//     const updatedProduct = await Product.findOne({
-//       where: { id },
-//       include: [
-//         { model: ProductImage, as: "images" },
-//         {
-//           model: ProductVariant,
-//           as: "variants",
-//           include: [
-//             {
-//               model: ProductVariantAttributeValue,
-//               as: "attributes",
-//               include: [
-//                 { model: Attribute, as: "attribute", attributes: ["id", "name", "input_type"] },
-//                 { model: AttributeValue, as: "attribute_value", attributes: ["id", "value"] },
-//               ],
-//             },
-//             { model: ProductImage, as: "variant_images" },
-//           ],
-//         },
-//       ],
-//     });
-
-//     return apiResponse.successResponseWithData(
-//       res,
-//       "Product updated successfully",
-//       updatedProduct
-//     );
-//   } catch (err) {
-//     if (!t.finished) {
-//       await t.rollback();
-//     }
-//     console.error("Update product error:", err);
-//     return apiResponse.ErrorResponse(res, err.message);
-//   }
-// };
-
 export const updateProductById = async (req, res) => {
   const t = await Product.sequelize.transaction();
 
@@ -683,7 +423,7 @@ export const updateProductById = async (req, res) => {
       });
     }
 
-    // 4️⃣ Add new product-level images
+    // 4️⃣ Add new product-level images (only files)
     const productFiles = (req.files || []).filter(
       (f) => f.fieldname === "images"
     );
@@ -712,7 +452,7 @@ export const updateProductById = async (req, res) => {
           id: variantId,
           attributes,
           sku,
-          images: variantImages,
+          images: variantImages, // ignored if only URLs
           ...variantInfo
         } = variantsArray[i];
         let variant;
@@ -785,8 +525,6 @@ export const updateProductById = async (req, res) => {
           );
 
           // ➕ Add attributes
-          console.log("add new");
-          console.log(attributes);
           if (attributes && attributes.length > 0) {
             const pvavRecords = attributes.map((attr) => ({
               product_id: id,
@@ -794,17 +532,17 @@ export const updateProductById = async (req, res) => {
               attribute_id: attr.attribute_id || attr.attribute?.id,
               attribute_value_id: attr.attribute_value_id,
             }));
-            console.log(pvavRecords);
             await ProductVariantAttributeValue.bulkCreate(pvavRecords, {
               transaction: t,
             });
           }
         }
 
-        // 🔄 Handle variant images (file uploads)
+        // 🔄 Handle variant images (only uploaded files, skip URLs)
         const variantFiles = (req.files || []).filter(
           (f) => f.fieldname === `variant_${i}_image`
         );
+
         if (variantFiles.length > 0) {
           const variantImageRecords = variantFiles.map((f) => ({
             product_id: id,
@@ -816,19 +554,7 @@ export const updateProductById = async (req, res) => {
           });
         }
 
-        // 🔄 Handle variant images (URLs from body)
-        if (Array.isArray(variantImages) && variantImages.length > 0) {
-          const urlImages = variantImages
-            .filter((img) => typeof img === "string" && img.trim() !== "")
-            .map((url) => ({
-              product_id: id,
-              variant_id: variant.id,
-              image_url: url,
-            }));
-          if (urlImages.length > 0) {
-            await ProductImage.bulkCreate(urlImages, { transaction: t });
-          }
-        }
+        // ❌ Skip variantImages from body (URLs) — not inserted
       }
     } else {
       // 📌 Simple product case (update first variant)
@@ -1079,3 +805,606 @@ export const removeAttributeInProduct = async (req, res) => {
     return apiResponse.ErrorResponse(res, err.message);
   }
 };
+
+/**
+ * Get 10 random products (Trending)
+ */
+export const getRandomProducts = async (req, res) => {
+  try {
+    const userId = req.user?.id || null; // from optionalAuthCookie
+
+    const products = await Product.findAll({
+      where: { is_deleted: false },
+      include: [
+        {
+          model: ProductVariant,
+          as: "variants",
+          required: false,
+          where: { is_deleted: false },
+          limit: 1,
+        },
+        {
+          model: ProductImage,
+          as: "images",
+          required: false,
+          where: { is_deleted: false },
+        },
+      ],
+      limit: 10,
+      order: Sequelize.literal("RANDOM()"), // ✅ random
+    });
+
+    if (!products || products.length === 0) {
+      return apiResponse.notFoundResponse(res, "No products found", []);
+    }
+
+    // Fetch wishlist product IDs for this user
+    let wishlistProductIds = [];
+    if (userId) {
+      const wishlistItems = await Wishlist.findAll({
+        where: { user_id: userId },
+        attributes: ["product_id"],
+      });
+      wishlistProductIds = wishlistItems.map((w) => w.product_id);
+    }
+
+    const response = products.map((product) => {
+      const variant = product.variants?.[0];
+      const primaryImage =
+        product.images?.find((img) => img.is_primary) || product.images?.[0];
+
+      return {
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        price: variant ? Number(variant.selling_price) : 0,
+        originalPrice: variant ? Number(variant.price) : 0,
+        discount: variant
+          ? Math.round(
+              ((variant.price - variant.selling_price) / variant.price) * 100
+            )
+          : 0,
+        image: primaryImage ? primaryImage.image_url : null,
+        rating: 0,
+        reviews: 0,
+        is_wishlist: userId ? wishlistProductIds.includes(product.id) : false,
+      };
+    });
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Random products fetched successfully",
+      response
+    );
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+/**
+ * Get top rated products (dummy - random for now)
+ */
+export const getTopRatedProducts = async (req, res) => {
+  try {
+    const userId = req.user?.id || null; // from optionalAuthCookie
+
+    const products = await Product.findAll({
+      where: { is_deleted: false },
+      include: [
+        {
+          model: ProductVariant,
+          as: "variants",
+          required: false,
+          where: { is_deleted: false },
+          limit: 1,
+        },
+        {
+          model: ProductImage,
+          as: "images",
+          required: false,
+          where: { is_deleted: false },
+        },
+      ],
+      limit: 10,
+      order: Sequelize.literal("RANDOM()"),
+    });
+
+    if (!products || products.length === 0) {
+      return apiResponse.notFoundResponse(res, "No products found", []);
+    }
+
+    // Fetch wishlist product IDs
+    let wishlistProductIds = [];
+    if (userId) {
+      const wishlistItems = await Wishlist.findAll({
+        where: { user_id: userId },
+        attributes: ["product_id"],
+      });
+      wishlistProductIds = wishlistItems.map((w) => w.product_id);
+    }
+
+    const response = products.map((product) => {
+      const variant = product.variants?.[0];
+      const primaryImage =
+        product.images?.find((img) => img.is_primary) || product.images?.[0];
+
+      return {
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        price: variant ? Number(variant.selling_price) : 0,
+        originalPrice: variant ? Number(variant.price) : 0,
+        discount: variant
+          ? Math.round(
+              ((variant.price - variant.selling_price) / variant.price) * 100
+            )
+          : 0,
+        image: primaryImage ? primaryImage.image_url : null,
+        rating: 0,
+        reviews: 0,
+        is_wishlist: userId ? wishlistProductIds.includes(product.id) : false,
+      };
+    });
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Top rated products fetched successfully",
+      response
+    );
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+/**
+ * Get all products with pagination
+ */
+export const getWebAllProducts = async (req, res) => {
+  try {
+    const userId = req.user?.id || null;
+    const page = parseInt(req.body.page) || 1;
+    const limit = parseInt(req.body.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const { main, sub, child } = req.body; // slugs
+
+    let mainCategoryId = null,
+      subCategoryId = null,
+      childCategoryId = null;
+
+    // 🔹 Resolve slugs to IDs
+    if (main) {
+      const mainCat = await Category.findOne({
+        where: { slug: main, is_delete: false },
+        attributes: ["id"],
+      });
+      if (!mainCat)
+        return apiResponse.notFoundResponse(res, "Invalid main slug", []);
+      mainCategoryId = mainCat.id;
+    }
+
+    if (sub) {
+      const subCat = await Category.findOne({
+        where: { slug: sub, is_delete: false },
+        attributes: ["id"],
+      });
+      if (!subCat)
+        return apiResponse.notFoundResponse(res, "Invalid sub slug", []);
+      subCategoryId = subCat.id;
+    }
+
+    if (child) {
+      const childCat = await Category.findOne({
+        where: { slug: child, is_delete: false },
+        attributes: ["id"],
+      });
+      if (!childCat)
+        return apiResponse.notFoundResponse(res, "Invalid child slug", []);
+      childCategoryId = childCat.id;
+    }
+
+    // 🔹 Build product query dynamically
+    const whereCondition = { is_deleted: false };
+    if (childCategoryId) {
+      whereCondition.category_id = childCategoryId;
+    } else if (subCategoryId) {
+      whereCondition.subcategory_id = subCategoryId;
+    } else if (mainCategoryId) {
+      whereCondition.maincategory_id = mainCategoryId;
+    }
+
+    const { count, rows: products } = await Product.findAndCountAll({
+      where: whereCondition,
+      include: [
+        {
+          model: ProductVariant,
+          as: "variants",
+          required: false,
+          where: { is_deleted: false },
+          limit: 1,
+        },
+        {
+          model: ProductImage,
+          as: "images",
+          required: false,
+          where: { is_deleted: false },
+        },
+      ],
+      distinct: true,
+      offset,
+      limit,
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (!products || products.length === 0)
+      return apiResponse.notFoundResponse(res, "No products found", []);
+
+    // 🔹 Wishlist check
+    let wishlistProductIds = [];
+    if (userId) {
+      const wishlistItems = await Wishlist.findAll({
+        where: { user_id: userId },
+        attributes: ["product_id"],
+      });
+      wishlistProductIds = wishlistItems.map((w) => w.product_id);
+    }
+
+    // 🔹 Format product data
+    const response = products.map((product) => {
+      const variant = product.variants?.[0];
+      const primaryImage =
+        product.images?.find((img) => img.is_primary) || product.images?.[0];
+
+      return {
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        price: variant ? Number(variant.selling_price) : 0,
+        originalPrice: variant ? Number(variant.price) : 0,
+        discount: variant
+          ? Math.round(
+              ((variant.price - variant.selling_price) / variant.price) * 100
+            )
+          : 0,
+        image: primaryImage ? primaryImage.image_url : null,
+        rating: 0,
+        reviews: 0,
+        is_wishlist: userId ? wishlistProductIds.includes(product.id) : false,
+      };
+    });
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Products fetched successfully",
+      response,
+      { total: count }
+    );
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+export const getSimilarProducts = async (req, res) => {
+  try {
+    const userId = req.user?.id || null;
+    const { product_id, category_id, limit = 10 } = req.body;
+
+    if (!category_id) {
+      return apiResponse.notFoundResponse(res, "category_id is required", []);
+    }
+
+    // 🔹 Fetch products in the same category excluding the current product
+    const products = await Product.findAll({
+      where: {
+        is_deleted: false,
+        category_id: category_id,
+        id: { [Op.ne]: product_id }, // Exclude current product
+      },
+      include: [
+        {
+          model: ProductVariant,
+          as: "variants",
+          required: false,
+          where: { is_deleted: false },
+          limit: 1,
+        },
+        {
+          model: ProductImage,
+          as: "images",
+          required: false,
+          where: { is_deleted: false },
+        },
+      ],
+      limit,
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (!products || products.length === 0)
+      return apiResponse.notFoundResponse(res, "No similar products found", []);
+
+    // 🔹 Wishlist check
+    let wishlistProductIds = [];
+    if (userId) {
+      const wishlistItems = await Wishlist.findAll({
+        where: { user_id: userId },
+        attributes: ["product_id"],
+      });
+      wishlistProductIds = wishlistItems.map((w) => w.product_id);
+    }
+
+    // 🔹 Format product data
+    const response = products.map((product) => {
+      const variant = product.variants?.[0];
+      const primaryImage =
+        product.images?.find((img) => img.is_primary) || product.images?.[0];
+
+      return {
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        price: variant ? Number(variant.selling_price) : 0,
+        originalPrice: variant ? Number(variant.price) : 0,
+        discount: variant
+          ? Math.round(
+              ((variant.price - variant.selling_price) / variant.price) * 100
+            )
+          : 0,
+        image: primaryImage ? primaryImage.image_url : null,
+        rating: 0,
+        reviews: 0,
+        is_wishlist: userId ? wishlistProductIds.includes(product.id) : false,
+      };
+    });
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Similar products fetched successfully",
+      response
+    );
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+// export const getProductDetails = async (req, res) => {
+//   try {
+//     const userId = req.user?.id || null;
+//     const product_id = req.params.id;
+
+//     if (!product_id) {
+//       return apiResponse.notFoundResponse(res, "product_id is required", []);
+//     }
+
+//     // 🔹 Fetch product with variants + attributes + images
+//     const product = await Product.findOne({
+//       where: { id: product_id, is_deleted: false },
+//       include: [
+//         {
+//           model: ProductVariant,
+//           as: "variants",
+//           required: false,
+//           where: { is_deleted: false },
+//           include: [
+//             {
+//               model: ProductVariantAttributeValue,
+//               as: "attributes",
+//               include: [
+//                 {
+//                   model: Attribute,
+//                   as: "attribute",
+//                   attributes: ["id", "name"],
+//                 },
+//                 {
+//                   model: AttributeValue,
+//                   as: "attribute_value",
+//                   attributes: ["id", "value"],
+//                 },
+//               ],
+//             },
+//           ],
+//         },
+//         {
+//           model: ProductImage,
+//           as: "images",
+//           required: false,
+//           where: { is_deleted: false },
+//         },
+//       ],
+//     });
+
+//     if (!product) {
+//       return apiResponse.notFoundResponse(res, "Product not found", []);
+//     }
+
+//     // 🔹 Wishlist
+//     const isWishlist = userId
+//       ? !!(await Wishlist.findOne({
+//           where: { user_id: userId, product_id: product.id },
+//         }))
+//       : false;
+
+//     // 🔹 Format images
+//     const images = product.images?.map((img) => img.image_url) || [];
+
+//     // 🔹 Format variants + attributes
+//     const variants =
+//       product.variants?.map((variant) => {
+//         const attrs = {};
+
+//         variant.attributes?.forEach((attr) => {
+//   const name = attr.attribute?.name || "";
+//   const value = attr.attribute_value?.value || ""; // ✅ match alias
+//   if (name && value) attrs[name] = value;
+// });
+
+//         return {
+//           id: variant.id,
+//           price: Number(variant.selling_price),
+//           oldPrice: Number(variant.price),
+//           attributes: attrs,
+//           stock: variant.stock || 0,
+//         };
+//       }) || [];
+
+//     // 🔹 Mock reviews (or from Review model)
+//     const reviewData = [
+//       { name: "Riya Sharma", rating: 4, comment: "Great quality and fit! Loved the fabric." },
+//       { name: "Anjali Mehta", rating: 5, comment: "Perfect for festive occasions. Highly recommend!" },
+//       { name: "Neha Verma", rating: 5, comment: "Stylish and comfy. Will buy again!" },
+//       { name: "Priya Singh", rating: 3, comment: "Looks nice but slightly tight." },
+//       { name: "Meena Joshi", rating: 4, comment: "Very soft and elegant fabric. Happy with it." },
+//     ];
+
+//     // 🔹 Final response
+//     const response = {
+//       id: product.id,
+//       title: product.name,
+//       description: product.description || "",
+//       availability: product.status || "In Stock",
+//       images,
+//       variants,
+//       is_wishlist: isWishlist,
+//       reviews: reviewData,
+//     };
+
+//     return apiResponse.successResponseWithData(
+//       res,
+//       "Product details fetched successfully",
+//       response
+//     );
+//   } catch (err) {
+//     console.error("getProductDetails error:", err);
+//     return apiResponse.ErrorResponse(res, err.message);
+//   }
+// };
+
+export const getProductDetails = async (req, res) => {
+  try {
+    const userId = req.user?.id || null;
+    const productId = req.params.id;
+
+    if (!productId) {
+      return apiResponse.notFoundResponse(res, "product_id is required", []);
+    }
+
+    // ✅ Get wishlist items (for logged-in users)
+    let wishlistProductIds = [];
+    if (userId) {
+      const wishlistItems = await Wishlist.findAll({
+        where: { user_id: userId },
+        attributes: ["product_id"],
+      });
+      wishlistProductIds = wishlistItems.map((w) => w.product_id);
+    }
+
+    // ✅ Fetch single product with all relations
+    const product = await Product.findOne({
+      where: { id: productId, is_deleted: false },
+      attributes: ["id", "name", "description"],
+      include: [
+        {
+          model: ProductImage,
+          as: "images",
+          where: { is_deleted: false },
+          required: false,
+          attributes: ["id", "image_url", "variant_id", "is_primary"],
+        },
+        {
+          model: ProductVariant,
+          as: "variants",
+          where: { is_deleted: false },
+          required: false,
+          attributes: [
+            "id",
+            "sku",
+            "price",
+            "stock",
+            "is_default",
+            "shipping_cost",
+            "selling_price",
+          ],
+          include: [
+            {
+              model: ProductVariantAttributeValue,
+              as: "attributes",
+              include: [
+                {
+                  model: Attribute,
+                  as: "attribute",
+                  attributes: ["id", "name", "input_type"],
+                },
+                {
+                  model: AttributeValue,
+                  as: "attribute_value",
+                  attributes: ["id", "value"],
+                },
+              ],
+            },
+            {
+              model: ProductImage,
+              as: "variant_images",
+              where: { is_deleted: false },
+              required: false,
+              attributes: ["id", "image_url", "is_primary"],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!product) {
+      return apiResponse.notFoundResponse(res, "Product not found", []);
+    }
+
+    // ✅ Format product
+    const formattedProduct = {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      is_wishlist: userId ? wishlistProductIds.includes(product.id) : false,
+      thumbnail:
+        product.images.find((img) => img.is_primary)?.image_url ||
+        product.images[0]?.image_url ||
+        null,
+      gallery: product.images.map((img) => img.image_url),
+      variants: product.variants.map((v) => ({
+        id: v.id,
+        sku: v.sku,
+        price: v.price,
+        selling_price: v.selling_price,
+        shipping_cost: v.shipping_cost,
+        stock: v.stock,
+        is_default: v.is_default,
+        attributes: v.attributes.map((attr) => ({
+          attribute_id: attr.attribute.id,
+          attribute_name: attr.attribute.name,
+          value_id: attr.attribute_value.id,
+          value: attr.attribute_value.value,
+        })),
+        images: v.variant_images.map((vi) => ({
+          id: vi.id,
+          url: vi.image_url,
+          is_primary: vi.is_primary,
+        })),
+      })),
+    };
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Product details fetched successfully",
+      formattedProduct
+    );
+  } catch (error) {
+    console.error("getAppProductDetails error:", error);
+    return apiResponse.ErrorResponse(res, error.message);
+  }
+};
+
+
+
+
+
+
+
+
+

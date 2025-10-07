@@ -23,8 +23,9 @@ import brandRoutes from "./Routes/brandRoutes.js";
 import sellerRoutes from "./Routes/sellerRoutes.js";
 import stateCityRoutes from "./Routes/stateCityRoutes.js";
 import adminRoutes from "./Routes/adminRoutes.js";
-
-
+import offerRoutes from "./Routes/offerRoutes.js";
+import cartRoutes from "./Routes/cartRoutes.js";
+import orderRoutes from "./Routes/orderRoutes.js";
 
 const app = express();
 app.use(cookieParser());
@@ -72,7 +73,9 @@ app.use("/attribute", attributeRoutes);
 app.use("/productVariant", productVariantRoutes);
 app.use("/banner", bannerRoutes);
 app.use("/brand", brandRoutes);
-
+app.use("/offer", offerRoutes);
+app.use("/cart", cartRoutes);
+app.use("/order", orderRoutes);
 
 app.use(morgan("dev"));
 app.use(

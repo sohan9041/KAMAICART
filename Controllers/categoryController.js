@@ -8,7 +8,8 @@ import {
   UpdateCategoryByID,
   DeleteCategoryByID,
   GetThreeLevelCategoriesData ,
-  GetCategoryByID
+  GetCategoryByID,
+  GetMegaMenuData
 } from "../Models/cateogryModel.js"; // adjust path if needed
 import apiResponse from "../Helper/apiResponse.js";
 import appapiResponse from "../Helper/appapiResponse.js";
@@ -139,5 +140,14 @@ export const getThreeLevelCategories = async (req, res) => {
     return appapiResponse.successResponseWithData(res, "Fetched successfully", records);
   } catch (err) {
     return appapiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+export const getMegaMenu = async (req, res) => {
+  try {
+    const records = await GetMegaMenuData();
+    return apiResponse.successResponseWithData(res, "Fetched successfully", records);
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
   }
 };

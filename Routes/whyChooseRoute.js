@@ -6,17 +6,17 @@ createOrUpdateWhyChoose,
   deleteWhyChoose,
   getWhyChooseListForWeb,
 } from "../Controllers/whyChooseController.js";
-import { verifyUser,cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { cookiesVerifyUser } from "../Middleware/verifyAuthMiddleware.js";
 import { uploadIcon } from "../Middleware/imageUploadMiddleware.js";
 
 const router = express.Router();
 
 
-router.get("/",cookiesverifyUser, getWhyChooseList);
+router.get("/",cookiesVerifyUser, getWhyChooseList);
 router.get("/get", getWhyChooseListForWeb);
-router.post("/",cookiesverifyUser,uploadIcon.single("icon"), createOrUpdateWhyChoose);
-router.put("/:id",cookiesverifyUser, createOrUpdateWhyChoose); // update same as createOrUpdate
-router.delete("/:id",cookiesverifyUser, deleteWhyChoose);
+router.post("/",cookiesVerifyUser,uploadIcon.single("icon"), createOrUpdateWhyChoose);
+router.put("/:id",cookiesVerifyUser, createOrUpdateWhyChoose); // update same as createOrUpdate
+router.delete("/:id",cookiesVerifyUser, deleteWhyChoose);
 
 
 export default router;

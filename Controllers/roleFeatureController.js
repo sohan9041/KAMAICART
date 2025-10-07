@@ -80,7 +80,7 @@ export const deleteRoleFeatureById = async (req, res) => {
 
     await roleFeature.destroy();
 
-    return apiResponse.successResponse(res, "Role Feature deleted successfully");
+    return apiResponse.successResponseWithData(res, "Role Feature deleted successfully");
   } catch (error) {
     return apiResponse.ErrorResponse(res, error.message);
   }

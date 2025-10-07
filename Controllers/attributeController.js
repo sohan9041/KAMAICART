@@ -183,7 +183,7 @@ export const deleteAttributeValueById = async (req, res) => {
   try {
     const { id } = req.params;
     await deleteAttributeValue(id);
-    return apiResponse.successResponse(res, "Deleted successfully");
+    return apiResponse.successResponseWithData(res, "Deleted successfully");
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }

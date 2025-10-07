@@ -18,7 +18,7 @@ export const getWhyChoose = async (where = {}) => {
 
 // ✅ Get all records
 export const getAll = async () => {
-  const records = await WhyChoose.findAll();
+  const records = await WhyChoose.findAll({ where: { is_delete: false } });
 
   return records;
 };

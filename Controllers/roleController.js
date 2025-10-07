@@ -145,7 +145,7 @@ export const deleteRole = async (req, res) => {
     role.is_deleted = true;
     await role.save();
 
-    return apiResponse.successResponse(res, "Role deleted successfully");
+    return apiResponse.successResponseWithData(res, "Role deleted successfully");
   } catch (error) {
     return apiResponse.ErrorResponse(res, error.message);
   }

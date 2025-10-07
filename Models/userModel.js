@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op,Sequelize } from "sequelize";
 import { User } from "../Schema/user.js";
 
 // Register new user
@@ -10,9 +10,20 @@ export const Register = async (name, email, phone, password, role_id) => {
 // Find user by email or phone
 export const findUserByEmailorPhone = async (identifier) => {
   return await User.findOne({
-    where: { [Op.or]: [{ email: identifier }, { phoneno: identifier }] },
+    where: {
+      [Op.and]: [
+        { status: "active" },
+        {
+          [Op.or]: [
+            { email: identifier },
+            { phoneno: identifier }
+          ]
+        }
+      ]
+    },
   });
 };
+
 
 // Update password
 export const Updatepassword = async (email, password) => {
@@ -57,12 +68,22 @@ export const getAllUsers = async (page, limit, filters) => {
   } 
 
   return await User.findAndCountAll({
-    where,
-    limit,
-    offset,
-    order: [["id", "DESC"]],
-    attributes: { exclude: ["password"] }, // don’t send password
-  });
+  where,
+  limit,
+  offset,
+  order: [["id", "DESC"]],
+  attributes: [
+    "id",
+    "name",
+    "email",
+    "phoneno",
+    "otp",
+    "otp_expiry",
+    "role_id",
+    "profileImage",
+    [Sequelize.col("status"), "user_status"], // 👈 alias
+  ],
+});
 };
 
 

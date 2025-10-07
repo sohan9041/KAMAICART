@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { Op } from "sequelize";
 import { Admin } from "../Models/admin.js";
 import apiResponse from "../Helper/apiResponse.js";
+import Token from "../Schema/token.js";
 import {
   generateTokens,
   signAccessToken,

@@ -7,8 +7,12 @@ export const saveBrand = async (data) => {
 
 // ✅ Get All
 export const getAllBrands = async () => {
-  return Brand.findAll({ where: { is_delete: false } });
+  return Brand.findAll({
+    where: { is_delete: false },
+    attributes: ["id", "name"], // ✅ only return id & name
+  });
 };
+
 
 // ✅ Get By ID
 export const getBrandByIdModel = async (id) => {

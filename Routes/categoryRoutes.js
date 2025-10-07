@@ -9,42 +9,47 @@ import {
   getCategoryById,
   deleteCategory,
   swipeCategories,
-  getThreeLevelCategories
+  getThreeLevelCategories,
+  getMegaMenu
 } from "../Controllers/categoryController.js";
-import { verifyUser,cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { cookiesVerifyUser } from "../Middleware/verifyAuthMiddleware.js";
 import { uploadCategoryImage } from "../Middleware/imageUploadMiddleware.js";
 const router = express.Router();
 
 //api
 router.get("/all",  getThreeLevelCategories);
+router.get("/megaMenu", getMegaMenu);
+
 
 // ✅ Create
 router.post(
   "/main",
-  cookiesverifyUser,
+  cookiesVerifyUser,
   uploadCategoryImage.single("image"), // Add image upload
   createMainCategory
 );
 router.post(
   "/sub",
-  cookiesverifyUser,
+  cookiesVerifyUser,
   uploadCategoryImage.single("image"), // Add image upload
   createSubCategory
 );
 // ✅ Get
-router.get("/", cookiesverifyUser, getCategories); // ?parent_id=null OR ?parent_id=1
-router.get("/sub", cookiesverifyUser, getSubCategories);
-router.get("/sub-sub", cookiesverifyUser, getSubSubCategories);
-router.get("/:id", cookiesverifyUser, getCategoryById);
+
+router.get("/", cookiesVerifyUser, getCategories); // ?parent_id=null OR ?parent_id=1
+router.get("/sub", cookiesVerifyUser, getSubCategories);
+router.get("/sub-sub", cookiesVerifyUser, getSubSubCategories);
+router.get("/:id", cookiesVerifyUser, getCategoryById);
+
 // ✅ Update
 router.put(
   "/:id",
-  cookiesverifyUser,
+  cookiesVerifyUser,
   uploadCategoryImage.single("image"), // Allow updating image
   updateCategory
 );
-router.post("/swipe", cookiesverifyUser, swipeCategories);
+router.post("/swipe", cookiesVerifyUser, swipeCategories);
 
 // ✅ Delete
-router.delete("/:id", cookiesverifyUser, deleteCategory);
+router.delete("/:id", cookiesVerifyUser, deleteCategory);
 export default router;

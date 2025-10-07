@@ -1,6 +1,17 @@
 import express from "express";
-import { AppGetAddress,AppGetAddressById, AppAddAddress, AppUpdateAddress, AppDeleteAddress } from "../Controllers/userAddressController.js";
-import { verifyUser,cookiesverifyUser } from "../Middleware/verifyAuthMiddleware.js";
+import { 
+  AppGetAddress,
+  AppGetAddressById, 
+  AppAddAddress, 
+  AppUpdateAddress, 
+  AppDeleteAddress,
+  WebGetAddresses,
+  WebAddAddress,
+  WebUpdateAddress,
+  WebDeleteAddress,
+  WebGetAddressById
+ } from "../Controllers/userAddressController.js";
+import { verifyUser,cookiesVerifyUser } from "../Middleware/verifyAuthMiddleware.js";
 import {
   createUser,
   getUserList,
@@ -18,24 +29,17 @@ router.post("/address",verifyUser, AppAddAddress);
 router.post("/address/:id",verifyUser, AppUpdateAddress);
 router.delete("/address/:id",verifyUser, AppDeleteAddress);
 
-// ✅ Create User
-router.post("/",cookiesverifyUser, createUser);
+router.get("/web/address", cookiesVerifyUser, WebGetAddresses);
+router.get("/web/address/:id", cookiesVerifyUser, WebGetAddressById);
+router.post("/web/address", cookiesVerifyUser, WebAddAddress);
+router.post("/web/address/:id", cookiesVerifyUser, WebUpdateAddress);
+router.delete("/web/address/:id", cookiesVerifyUser, WebDeleteAddress);
 
-// ✅ Get All Users (with pagination)
-router.get("/",cookiesverifyUser, getUserList);
-
-// ✅ Get User by ID
-router.get("/:id",cookiesverifyUser, getUserById);
-
-// ✅ Update User
-router.put("/:id",cookiesverifyUser, updateUser);
-
-// ✅ Soft Delete User
-router.delete("/:id",cookiesverifyUser, deleteUser);
-
-// ✅ Toggle User Status (active/inactive)
-router.patch("/:id/toggle-status",cookiesverifyUser, toggleUserStatus);
-
-
+router.post("/",cookiesVerifyUser, createUser);
+router.get("/",cookiesVerifyUser, getUserList);
+router.get("/:id",cookiesVerifyUser, getUserById);
+router.put("/:id",cookiesVerifyUser, updateUser);
+router.delete("/:id",cookiesVerifyUser, deleteUser);
+router.patch("/:id/toggle-status",cookiesVerifyUser, toggleUserStatus);
 
 export default router;

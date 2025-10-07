@@ -33,7 +33,7 @@ export const updateProductVariant = async (req, res) => {
   try {
     const updated = await productVariantModel.updateProductVariantById(req.params.id, req.body);
     if (!updated[0]) return apiResponse.notFoundResponse(res, "Variant not found or already deleted");
-    return apiResponse.successResponse(res, "Variant updated successfully");
+    return apiResponse.successResponseWithData(res, "Variant updated successfully");
   } catch (error) {
     return apiResponse.ErrorResponse(res, error.message);
   }
@@ -43,7 +43,7 @@ export const deleteProductVariant = async (req, res) => {
   try {
     const deleted = await productVariantModel.softDeleteProductVariant(req.params.id);
     if (!deleted[0]) return apiResponse.notFoundResponse(res, "Variant not found");
-    return apiResponse.successResponse(res, "Variant deleted successfully");
+    return apiResponse.successResponseWithData(res, "Variant deleted successfully");
   } catch (error) {
     return apiResponse.ErrorResponse(res, error.message);
   }
