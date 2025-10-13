@@ -20,6 +20,10 @@ const OrderItem = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    variant_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,

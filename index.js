@@ -26,6 +26,9 @@ import adminRoutes from "./Routes/adminRoutes.js";
 import offerRoutes from "./Routes/offerRoutes.js";
 import cartRoutes from "./Routes/cartRoutes.js";
 import orderRoutes from "./Routes/orderRoutes.js";
+import paymentMethodRoutes from "./Routes/paymentMethodRoutes.js";
+import promoCodeRoutes from "./Routes/promoCodeRoutes.js";
+
 
 const app = express();
 app.use(cookieParser());
@@ -76,6 +79,10 @@ app.use("/brand", brandRoutes);
 app.use("/offer", offerRoutes);
 app.use("/cart", cartRoutes);
 app.use("/order", orderRoutes);
+app.use("/paymentMethod", paymentMethodRoutes);
+app.use("/paymentMethod", promoCodeRoutes);
+
+
 
 app.use(morgan("dev"));
 app.use(

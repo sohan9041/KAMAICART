@@ -647,10 +647,21 @@ export const getAppProductList = async (req, res) => {
   try {
     // ✅ Logged-in user ID (from auth middleware or query param)
     const userId = req.user?.id || null;
-    // Pagination params
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+
+    // ✅ Pagination
+    const page = parseInt(req.body.page) || 1;
+    const limit = parseInt(req.body.limit) || 10;
     const offset = (page - 1) * limit;
+
+    // ✅ Category filters
+    const { maincategory_id, subcategory_id, childcategory_id } = req.body;
+
+    // ✅ Build where condition dynamically
+    const whereCondition = { is_deleted: false };
+
+    if (maincategory_id) whereCondition.maincategory_id = maincategory_id;
+    if (subcategory_id) whereCondition.subcategory_id = subcategory_id;
+    if (childcategory_id) whereCondition.category_id = childcategory_id;
 
     // ✅ Get user wishlist product_ids only if logged in
     let wishlistProductIds = [];
@@ -662,9 +673,10 @@ export const getAppProductList = async (req, res) => {
       wishlistProductIds = wishlistItems.map((w) => w.product_id);
     }
 
+    // ✅ Fetch products with filters
     const { count, rows: products } = await Product.findAndCountAll({
-      where: { is_deleted: false },
-      attributes: ["id", "name", "description"],
+      where: whereCondition,
+      attributes: ["id", "name", "description", "product_type", "maincategory_id", "subcategory_id", "category_id"],
       include: [
         {
           model: ProductImage,
@@ -720,12 +732,16 @@ export const getAppProductList = async (req, res) => {
       order: [["id", "DESC"]],
     });
 
-    // ✅ Transform response for app
+    // ✅ Format response
     const formattedProducts = products.map((p) => ({
       id: p.id,
       name: p.name,
       description: p.description,
-      is_wishlist: userId ? wishlistProductIds.includes(p.id) : false, // ✅ false if not logged in
+      product_type: p.product_type,
+      maincategory_id: p.maincategory_id,
+      subcategory_id: p.subcategory_id,
+      childcategory_id: p.category_id,
+      is_wishlist: userId ? wishlistProductIds.includes(p.id) : false,
       thumbnail:
         p.images.find((img) => img.is_primary)?.image_url ||
         p.images[0]?.image_url ||
@@ -753,7 +769,7 @@ export const getAppProductList = async (req, res) => {
       })),
     }));
 
-    // ✅ Pagination metadata
+    // ✅ Pagination info
     const totalPages = Math.ceil(count / limit);
 
     return appapiResponse.successResponseWithData(
@@ -771,6 +787,7 @@ export const getAppProductList = async (req, res) => {
     return appapiResponse.ErrorResponse(res, error.message);
   }
 };
+
 
 export const removeAttributeInProduct = async (req, res) => {
   try {
@@ -1281,13 +1298,13 @@ export const getSimilarProducts = async (req, res) => {
 export const getProductDetails = async (req, res) => {
   try {
     const userId = req.user?.id || null;
-    const productId = req.params.id;
+    const productId = req.params.id; // product id from URL param
 
     if (!productId) {
-      return apiResponse.notFoundResponse(res, "product_id is required", []);
+      return apiResponse.ErrorResponse(res, "Product ID is required");
     }
 
-    // ✅ Get wishlist items (for logged-in users)
+    // ✅ Get wishlist product IDs for logged-in user
     let wishlistProductIds = [];
     if (userId) {
       const wishlistItems = await Wishlist.findAll({
@@ -1297,10 +1314,10 @@ export const getProductDetails = async (req, res) => {
       wishlistProductIds = wishlistItems.map((w) => w.product_id);
     }
 
-    // ✅ Fetch single product with all relations
+    // ✅ Fetch single product with full details
     const product = await Product.findOne({
       where: { id: productId, is_deleted: false },
-      attributes: ["id", "name", "description"],
+      attributes: ["id", "name", "description", "product_type"],
       include: [
         {
           model: ProductImage,
@@ -1353,14 +1370,23 @@ export const getProductDetails = async (req, res) => {
     });
 
     if (!product) {
-      return apiResponse.notFoundResponse(res, "Product not found", []);
+      return apiResponse.ErrorResponse(res, "Product not found");
     }
 
-    // ✅ Format product
+    const reviewData = [
+      { name: "Riya Sharma", rating: 4, comment: "Great quality and fit! Loved the fabric." },
+      { name: "Anjali Mehta", rating: 5, comment: "Perfect for festive occasions. Highly recommend!" },
+      { name: "Neha Verma", rating: 5, comment: "Stylish and comfy. Will buy again!" },
+      { name: "Priya Singh", rating: 3, comment: "Looks nice but slightly tight." },
+      { name: "Meena Joshi", rating: 4, comment: "Very soft and elegant fabric. Happy with it." },
+    ];
+
+    // ✅ Transform single product data (same format as list)
     const formattedProduct = {
       id: product.id,
       name: product.name,
       description: product.description,
+      product_type: product.product_type,
       is_wishlist: userId ? wishlistProductIds.includes(product.id) : false,
       thumbnail:
         product.images.find((img) => img.is_primary)?.image_url ||
@@ -1387,18 +1413,19 @@ export const getProductDetails = async (req, res) => {
           is_primary: vi.is_primary,
         })),
       })),
+      reviews:reviewData
     };
 
     return apiResponse.successResponseWithData(
       res,
-      "Product details fetched successfully",
+      "Product fetched successfully",
       formattedProduct
     );
   } catch (error) {
-    console.error("getAppProductDetails error:", error);
     return apiResponse.ErrorResponse(res, error.message);
   }
 };
+
 
 
 

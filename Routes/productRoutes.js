@@ -30,6 +30,7 @@ import { uploadProductImages } from "../Middleware/imageUploadMiddleware.js";
 const router = express.Router();
 
 router.post("/home-list",optionalAuthHeader, getAppProductList);
+
 router.get("/trending-product",optionalAuthCookie,getRandomProducts);
 router.get("/top-rated",optionalAuthCookie,getTopRatedProducts);
 router.post("/all-products",optionalAuthCookie, getWebAllProducts);

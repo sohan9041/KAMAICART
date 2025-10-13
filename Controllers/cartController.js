@@ -2,6 +2,9 @@ import {Cart} from "../Models/cartModel.js";
 import {Product} from "../Models/productModel.js";
 import {ProductImage} from "../Models/productImageModel.js";
 import {ProductVariant} from "../Models/productVariantModel.js";
+import { ProductVariantAttributeValue } from "../Models/ProductVariantAttributeValueModel.js";
+import { Attribute } from "../Models/attributeModel.js";
+import { AttributeValue } from "../Models/attributeValueModel.js";
 
 import apiResponse from "../Helper/apiResponse.js";
 import appapiResponse from "../Helper/appapiResponse.js";
@@ -108,10 +111,21 @@ export const getCart = async (req, res) => {
       ],
     });
 
+    let totalSellingPrice = 0;
+
     const formatted = items.map((i) => {
-      // ✅ Use product variant or fallback to first
       const variant = i.variant || i.product.variants?.[0] || null;
-      const images = variant ? variant.variant_images : i.product.images;
+
+      // ✅ Try variant images first, then fallback to product images
+      const variantImages = variant?.variant_images || [];
+      const productImages = i.product.images || [];
+      const images = variantImages.length > 0 ? variantImages : productImages;
+
+      // ✅ Select primary image (variant or product)
+      const primaryImage =
+        images.find((img) => img.is_primary)?.image_url ||
+        images[0]?.image_url ||
+        null;
 
       const price = parseFloat(variant?.selling_price || 0);
       const originalPrice = parseFloat(variant?.price || price);
@@ -120,6 +134,9 @@ export const getCart = async (req, res) => {
           ? Math.round(((originalPrice - price) / originalPrice) * 100)
           : 0;
 
+      const quantity = i.quantity || 1;
+      totalSellingPrice += price * quantity;
+
       return {
         id: i.id,
         name: i.product.name,
@@ -127,30 +144,27 @@ export const getCart = async (req, res) => {
         price: price.toFixed(2),
         originalPrice: originalPrice.toFixed(2),
         sellingPrice: price.toFixed(2),
-        discount: discount,
-        image:
-          images.find((img) => img.is_primary)?.image_url ||
-          images[0]?.image_url ||
-          null,
+        discount,
+        image: primaryImage,
         category: i.product.category_id || null,
         rating: 0,
         stockStatus: (variant?.stock || 0) > 0 ? "in" : "out",
         onSale: discount > 0,
-        quantity: i.quantity, // ✅ Added quantity from Cart table
+        quantity,
       };
     });
 
     return apiResponse.successResponseWithData(
       res,
       "Cart fetched successfully",
-      formatted
+      formatted,
+      { total: totalSellingPrice.toFixed(2) }
     );
   } catch (error) {
     console.error("Error in getCart:", error);
     return apiResponse.ErrorResponse(res, error.message);
   }
 };
-
 
 // Remove from cart
 export const removeFromCart = async (req, res) => {
@@ -253,7 +267,13 @@ export const appgetCart = async (req, res) => {
           model: Product,
           as: "product",
           where: { is_deleted: false },
-          attributes: ["id", "name", "short_description", "category_id"],
+          attributes: [
+            "id",
+            "name",
+            "short_description",
+            "category_id",
+            "product_type",
+          ],
           include: [
             {
               model: ProductImage,
@@ -262,22 +282,6 @@ export const appgetCart = async (req, res) => {
               required: false,
               attributes: ["id", "image_url", "is_primary"],
             },
-            {
-              model: ProductVariant,
-              as: "variants",
-              where: { is_deleted: false },
-              required: false,
-              attributes: ["id", "price", "selling_price", "stock"],
-              include: [
-                {
-                  model: ProductImage,
-                  as: "variant_images",
-                  where: { is_deleted: false },
-                  required: false,
-                  attributes: ["id", "image_url", "is_primary"],
-                },
-              ],
-            },
           ],
         },
         {
@@ -285,8 +289,31 @@ export const appgetCart = async (req, res) => {
           as: "variant",
           where: { is_deleted: false },
           required: false,
-          attributes: ["id", "price", "selling_price", "stock"],
+          attributes: [
+            "id",
+            "sku",
+            "price",
+            "selling_price",
+            "shipping_cost",
+            "stock",
+          ],
           include: [
+            {
+              model: ProductVariantAttributeValue,
+              as: "attributes",
+              include: [
+                {
+                  model: Attribute,
+                  as: "attribute",
+                  attributes: ["id", "name"],
+                },
+                {
+                  model: AttributeValue,
+                  as: "attribute_value",
+                  attributes: ["id", "value"],
+                },
+              ],
+            },
             {
               model: ProductImage,
               as: "variant_images",
@@ -300,24 +327,55 @@ export const appgetCart = async (req, res) => {
     });
 
     const formatted = items.map((i) => {
-      // ✅ Use product variant or fallback to first
-      const variant = i.variant || i.product.variants?.[0] || null;
-      const images = variant ? variant.variant_images : i.product.images;
+      const hasVariant = !!i.variant_id;
+      const variant = i.variant || null;
 
-      const price = parseFloat(variant?.selling_price || 0);
-      const originalPrice = parseFloat(variant?.price || price);
+      // ✅ Pick correct images
+      const images = hasVariant
+        ? variant?.variant_images || []
+        : i.product.images || [];
+
+      // ✅ Compute prices
+      const price = parseFloat(
+        hasVariant ? variant?.selling_price || 0 : 0
+      );
+      const originalPrice = parseFloat(
+        hasVariant ? variant?.price || price : price
+      );
       const discount =
         originalPrice > 0
           ? Math.round(((originalPrice - price) / originalPrice) * 100)
           : 0;
 
+      // ✅ Build variant object (only if variant exists)
+      const variantDetails = hasVariant
+        ? {
+            id: variant.id,
+            sku: variant.sku,
+            stock: variant.stock,
+            attributes:
+              variant.attributes?.map((attr) => ({
+                attribute_id: attr.attribute?.id,
+                attribute_name: attr.attribute?.name,
+                value_id: attr.attribute_value?.id,
+                value: attr.attribute_value?.value,
+              })) || [],
+            images:
+              variant.variant_images?.map((img) => ({
+                id: img.id,
+                url: img.image_url,
+                is_primary: img.is_primary,
+              })) || [],
+          }
+        : null;
+
       return {
         id: i.id,
         name: i.product.name,
         description: i.product.short_description || "",
-        price: price.toFixed(2),
-        originalPrice: originalPrice.toFixed(2),
-        sellingPrice: price.toFixed(2),
+        price: originalPrice.toFixed(2),
+       // originalPrice: originalPrice.toFixed(2),
+        selling_price: price.toFixed(2),
         discount: discount,
         image:
           images.find((img) => img.is_primary)?.image_url ||
@@ -327,7 +385,8 @@ export const appgetCart = async (req, res) => {
         rating: 0,
         stockStatus: (variant?.stock || 0) > 0 ? "in" : "out",
         onSale: discount > 0,
-        quantity: i.quantity, // ✅ Added quantity from Cart table
+        quantity: i.quantity,
+        ...(hasVariant && { variant: variantDetails }), // ✅ Include only if variant_id exists
       };
     });
 
@@ -341,7 +400,6 @@ export const appgetCart = async (req, res) => {
     return appapiResponse.ErrorResponse(res, error.message);
   }
 };
-
 
 // Remove from cart
 export const appremoveFromCart = async (req, res) => {

@@ -7,7 +7,7 @@ import {
   appremoveFromCart,
   appupdateCartQuantity
 } from "../Controllers/cartController.js";
-import { appplaceOrder, appgetOrderHistory, appgetOrderDetails } from "../Controllers/orderController.js";
+import { appplaceOrder, appgetOrderHistory, appgetOrderDetails,appcancelOrder,appreorder } from "../Controllers/orderController.js";
 
 const router = express.Router();
 
@@ -22,5 +22,7 @@ router.put("/update-cart-quantity/:id", verifyUser, appupdateCartQuantity);
 router.post("/place-order", verifyUser, appplaceOrder);
 router.get("/order-history", verifyUser, appgetOrderHistory);
 router.get("/order-details/:id", verifyUser, appgetOrderDetails);
+router.post("/cancel-order", verifyUser, appcancelOrder);
+router.post("/re-order", verifyUser, appreorder);
 
 export default router;

@@ -1,4 +1,4 @@
-import Wishlist  from "../Schema/wishlist.js";
+import Wishlist from "../Schema/wishlist.js";
 
 
 
