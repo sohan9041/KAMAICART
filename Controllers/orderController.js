@@ -251,17 +251,88 @@ export const getOrderHistory = async (req, res) => {
         {
           model: OrderItem,
           as: "items",
-          include: [{ model: Product, as: "product" }],
+          attributes: ["id", "quantity", "price"],
+          include: [
+            {
+              model: Product,
+              as: "product",
+              required: false,
+              attributes: ["id", "name", "short_description", "brand"],
+              include: [
+                {
+                  model: ProductImage,
+                  as: "images",
+                  where: { is_deleted: false },
+                  required: false,
+                  attributes: ["image_url", "is_primary"],
+                  limit: 1,
+                  order: [["is_primary", "DESC"]],
+                },
+              ],
+            },
+            {
+              model: ProductVariant,
+              as: "variant",
+              where: { is_deleted: false },
+              required: false,
+              include: [
+                {
+                  model: ProductVariantAttributeValue,
+                  as: "attributes",
+                  include: [
+                    { model: Attribute, as: "attribute", attributes: ["id", "name", "input_type"] },
+                    { model: AttributeValue, as: "attribute_value", attributes: ["id", "value"] },
+                  ],
+                },
+                {
+                  model: ProductImage,
+                  as: "variant_images",
+                  where: { is_deleted: false },
+                  required: false,
+                  attributes: ["id", "image_url", "is_primary"],
+                },
+              ],
+            },
+          ],
         },
+        { model: userAddress, as: "address", required: false },
+        { model: PaymentMethod, as: "payment_method", attributes: ["name"], required: false },
       ],
       order: [["createdAt", "DESC"]],
     });
 
-    return apiResponse.successResponseWithData(res, "Order history", orders);
+    const transformedOrders = orders.map((order) => ({
+      ...order.toJSON(),
+      subtotal: order.subtotal ?? 0,
+      shipping: order.shipping ?? 0,
+      tax: order.tax ?? 0,
+      promo_code: order.promo_code ?? null,
+      total_amount: order.total_amount ?? 0,
+      payment_name: order.payment_method ? order.payment_method.name : null, // direct payment_name
+      items: order.items.map((item) => {
+        const product = item.product
+          ? {
+              ...item.product.toJSON(),
+              image:
+                item.product.images && item.product.images.length > 0
+                  ? item.product.images[0].image_url
+                  : null,
+            }
+          : null;
+
+        if (product) delete product.images;
+
+        return { ...item.toJSON(), product };
+      }),
+      address: order.address ? order.address.toJSON() : null,
+    }));
+
+    return apiResponse.successResponseWithData(res, "Order history", transformedOrders);
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }
 };
+
 
 export const getOrderDetails = async (req, res) => {
   try {
@@ -274,16 +345,84 @@ export const getOrderDetails = async (req, res) => {
         {
           model: OrderItem,
           as: "items",
-          include: [{ model: Product, as: "product" }],
+          attributes: ["id", "quantity", "price"],
+          include: [
+            {
+              model: Product,
+              as: "product",
+              required: false,
+              attributes: ["id", "name", "short_description", "brand"],
+              include: [
+                {
+                  model: ProductImage,
+                  as: "images",
+                  where: { is_deleted: false },
+                  required: false,
+                  attributes: ["image_url", "is_primary"],
+                  limit: 1,
+                  order: [["is_primary", "DESC"]],
+                },
+              ],
+            },
+            {
+              model: ProductVariant,
+              as: "variant",
+              where: { is_deleted: false },
+              required: false,
+              include: [
+                {
+                  model: ProductVariantAttributeValue,
+                  as: "attributes",
+                  include: [
+                    { model: Attribute, as: "attribute", attributes: ["id", "name", "input_type"] },
+                    { model: AttributeValue, as: "attribute_value", attributes: ["id", "value"] },
+                  ],
+                },
+                {
+                  model: ProductImage,
+                  as: "variant_images",
+                  where: { is_deleted: false },
+                  required: false,
+                  attributes: ["id", "image_url", "is_primary"],
+                },
+              ],
+            },
+          ],
         },
+        { model: userAddress, as: "address", required: false },
+        { model: PaymentMethod, as: "payment_method", attributes: ["name"], required: false },
       ],
     });
 
-    if (!order) {
-      return apiResponse.ErrorResponse(res, "Order not found");
-    }
+    if (!order) return apiResponse.notFoundResponse(res, "Order not found", null);
 
-    return apiResponse.successResponseWithData(res, "Order details", order);
+    const transformedOrder = {
+      ...order.toJSON(),
+      subtotal: order.subtotal ?? 0,
+      shipping: order.shipping ?? 0,
+      tax: order.tax ?? 0,
+      promo_code: order.promo_code ?? null,
+      total_amount: order.total_amount ?? 0,
+      payment_name: order.payment_method ? order.payment_method.name : null, // direct payment_name
+      items: order.items.map((item) => {
+        const product = item.product
+          ? {
+              ...item.product.toJSON(),
+              image:
+                item.product.images && item.product.images.length > 0
+                  ? item.product.images[0].image_url
+                  : null,
+            }
+          : null;
+
+        if (product) delete product.images;
+
+        return { ...item.toJSON(), product };
+      }),
+      address: order.address ? order.address.toJSON() : null,
+    };
+
+    return apiResponse.successResponseWithData(res, "Order details", transformedOrder);
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }
@@ -314,7 +453,7 @@ export const cancelOrder = async (req, res) => {
     order.status = "cancelled";
     await order.save();
 
-    return apiResponse.successResponse(res, "Order cancelled successfully");
+    return apiResponse.successResponseWithData(res, "Order cancelled successfully");
   } catch (error) {
     console.error(error);
     return apiResponse.ErrorResponse(res, error.message);
@@ -324,45 +463,33 @@ export const cancelOrder = async (req, res) => {
 export const reorder = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { order_id,address_id,payment_id,razorpay_payment_id=null } = req.body;
+    const { order_id } = req.body;
 
-    if (!order_id) return apiResponse.ErrorResponse(res, "Order ID is required");
+    if (!order_id) 
+      return apiResponse.ErrorResponse(res, "Order ID is required");
 
+    // ✅ Find old order
     const oldOrder = await Order.findOne({
       where: { id: order_id, user_id: userId },
       include: [{ model: OrderItem, as: "items" }],
     });
 
-    if (!oldOrder) return apiResponse.notFoundResponse(res, "Original order not found");
-
-    // ✅ Create new order with pending status
-    const newOrder = await Order.create({
+    if (!oldOrder) 
+      return apiResponse.notFoundResponse(res, "Original order not found");
+    // ✅ Add items to cart
+    const cartItems = oldOrder.items.map((item) => ({
       user_id: userId,
-      address_id: address_id,
-      payment_id: payment_id,
-      total_amount: oldOrder.total_amount,
-      subtotal: oldOrder.subtotal,
-      tax: oldOrder.tax,
-      shipping: oldOrder.shipping,
-      status: "pending",
-      razorpay_payment_id: razorpay_payment_id,
-    });
-
-    // ✅ Duplicate order items
-    const newOrderItems = oldOrder.items.map((item) => ({
-      order_id: newOrder.id,
       product_id: item.product_id,
       variant_id: item.variant_id,
-      quantity: item.quantity,
-      price: item.price,
+      quantity: item.quantity
     }));
 
-    await OrderItem.bulkCreate(newOrderItems);
+    await Cart.bulkCreate(cartItems);
 
     return apiResponse.successResponseWithData(
       res,
-      "Reorder created successfully",
-      { new_order_id: newOrder.id }
+      "Items added to cart for reorder",
+      { cart_count: cartItems.length }
     );
   } catch (error) {
     console.error(error);

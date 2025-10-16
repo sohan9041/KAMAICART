@@ -18,7 +18,7 @@ router.get("/type",verifyUser, getAllPaymentMethodsapp);
 router.get("/web",cookiesVerifyUser, getAllPaymentMethodsweb);
 
 router.post("/",cookiesVerifyUser,uploadIcon.single("image"), addPaymentMethod);
-router.put("/:id",cookiesVerifyUser, updatePaymentMethod);
+router.put("/:id",cookiesVerifyUser,uploadIcon.single("image"), updatePaymentMethod);
 router.get("/",cookiesVerifyUser, getAllPaymentMethods);
 router.get("/:id",cookiesVerifyUser, getPaymentMethodById);
 

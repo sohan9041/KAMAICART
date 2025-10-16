@@ -27,7 +27,7 @@ const Cart = sequelize.define(
     quantity: {
       type: DataTypes.INTEGER,
       defaultValue: 1,
-    },
+    }
   },
   {
     tableName: "cart",

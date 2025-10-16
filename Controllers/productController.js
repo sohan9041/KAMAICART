@@ -645,7 +645,6 @@ export const deleteProductById = async (req, res) => {
 
 export const getAppProductList = async (req, res) => {
   try {
-    // ✅ Logged-in user ID (from auth middleware or query param)
     const userId = req.user?.id || null;
 
     // ✅ Pagination
@@ -653,17 +652,24 @@ export const getAppProductList = async (req, res) => {
     const limit = parseInt(req.body.limit) || 10;
     const offset = (page - 1) * limit;
 
-    // ✅ Category filters
-    const { maincategory_id, subcategory_id, childcategory_id } = req.body;
+    // ✅ Filters
+    const { maincategory_id, subcategory_id, childcategory_id, search } = req.body;
 
-    // ✅ Build where condition dynamically
+    // ✅ Dynamic where condition
     const whereCondition = { is_deleted: false };
 
     if (maincategory_id) whereCondition.maincategory_id = maincategory_id;
     if (subcategory_id) whereCondition.subcategory_id = subcategory_id;
     if (childcategory_id) whereCondition.category_id = childcategory_id;
 
-    // ✅ Get user wishlist product_ids only if logged in
+    // ✅ 🔍 Search by product name or description
+    if (search && search.trim() !== "") {
+      whereCondition[Op.or] = [
+        { name: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    // ✅ Get wishlist product IDs
     let wishlistProductIds = [];
     if (userId) {
       const wishlistItems = await Wishlist.findAll({
@@ -673,10 +679,18 @@ export const getAppProductList = async (req, res) => {
       wishlistProductIds = wishlistItems.map((w) => w.product_id);
     }
 
-    // ✅ Fetch products with filters
+    // ✅ Fetch products
     const { count, rows: products } = await Product.findAndCountAll({
       where: whereCondition,
-      attributes: ["id", "name", "description", "product_type", "maincategory_id", "subcategory_id", "category_id"],
+      attributes: [
+        "id",
+        "name",
+        "description",
+        "product_type",
+        "maincategory_id",
+        "subcategory_id",
+        "category_id",
+      ],
       include: [
         {
           model: ProductImage,
@@ -732,7 +746,7 @@ export const getAppProductList = async (req, res) => {
       order: [["id", "DESC"]],
     });
 
-    // ✅ Format response
+    // ✅ Format output
     const formattedProducts = products.map((p) => ({
       id: p.id,
       name: p.name,
@@ -769,7 +783,7 @@ export const getAppProductList = async (req, res) => {
       })),
     }));
 
-    // ✅ Pagination info
+    // ✅ Pagination Info
     const totalPages = Math.ceil(count / limit);
 
     return appapiResponse.successResponseWithData(
@@ -787,6 +801,7 @@ export const getAppProductList = async (req, res) => {
     return appapiResponse.ErrorResponse(res, error.message);
   }
 };
+
 
 
 export const removeAttributeInProduct = async (req, res) => {
@@ -983,7 +998,7 @@ export const getWebAllProducts = async (req, res) => {
     const limit = parseInt(req.body.limit) || 10;
     const offset = (page - 1) * limit;
 
-    const { main, sub, child } = req.body; // slugs
+    const { main, sub, child, search } = req.body; // 🔹 Added search param
 
     let mainCategoryId = null,
       subCategoryId = null,
@@ -1022,6 +1037,8 @@ export const getWebAllProducts = async (req, res) => {
 
     // 🔹 Build product query dynamically
     const whereCondition = { is_deleted: false };
+
+    // Category filters
     if (childCategoryId) {
       whereCondition.category_id = childCategoryId;
     } else if (subCategoryId) {
@@ -1030,6 +1047,12 @@ export const getWebAllProducts = async (req, res) => {
       whereCondition.maincategory_id = mainCategoryId;
     }
 
+    // 🔹 Search by product name (case-insensitive)
+    if (search && search.trim() !== "") {
+      whereCondition.name = { [Op.like]: `%${search.trim()}%` };
+    }
+
+    // 🔹 Fetch products with variants & images
     const { count, rows: products } = await Product.findAndCountAll({
       where: whereCondition,
       include: [
@@ -1094,7 +1117,7 @@ export const getWebAllProducts = async (req, res) => {
       res,
       "Products fetched successfully",
       response,
-      { total: count }
+      { total: count, page, limit }
     );
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);

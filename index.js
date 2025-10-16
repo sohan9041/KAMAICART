@@ -28,6 +28,7 @@ import cartRoutes from "./Routes/cartRoutes.js";
 import orderRoutes from "./Routes/orderRoutes.js";
 import paymentMethodRoutes from "./Routes/paymentMethodRoutes.js";
 import promoCodeRoutes from "./Routes/promoCodeRoutes.js";
+import cancelReasonRoutes from "./Routes/cancelReasonRoutes.js";
 
 
 const app = express();
@@ -80,7 +81,9 @@ app.use("/offer", offerRoutes);
 app.use("/cart", cartRoutes);
 app.use("/order", orderRoutes);
 app.use("/paymentMethod", paymentMethodRoutes);
-app.use("/paymentMethod", promoCodeRoutes);
+app.use("/promoCode", promoCodeRoutes);
+app.use("/cancelReason", cancelReasonRoutes);
+
 
 
 

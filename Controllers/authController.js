@@ -16,11 +16,10 @@ import {
   signAccessToken,
   signRefreshToken,
   setAuthCookies,
-  setAccessTokenCookie
+  setAccessTokenCookie,
 } from "../Utils/tokens.js";
-import {
-  saveRefreshTokenRecord
-} from "../Helper/tokenHelper.js";
+import { saveRefreshTokenRecord } from "../Helper/tokenHelper.js";
+import { Admin } from "../Models/admin.js";
 // Temporary OTP store
 const tempUsers = {};
 export const Signup = async (req, res) => {
@@ -157,14 +156,23 @@ export const RefreshToken = async (req, res) => {
 
         // fetch user
         const user = await User.findByPk(decoded.id);
-        if (!user) return apiResponse.notFoundResponse(res, "User not found");
+        const admin = await Admin.findByPk(decoded.id);
 
-        // generate new tokens and save new refresh token
-        const newAccessToken = signAccessToken(user);
-       // const newRefreshToken = signRefreshToken(user);
+        // ✅ If neither user nor admin exists → return not found
+        if (!user && !admin) {
+          return apiResponse.notFoundResponse(res, "User not found");
+        }
+
+        // ✅ Determine who is logged in
+        const account = user || admin;
+
+        // ✅ Generate new access token
+        const newAccessToken = signAccessToken(account);
+
+        // const newRefreshToken = signRefreshToken(user);
 
         // ✅ Reset cookies with new tokens
-        setAccessTokenCookie(res,newAccessToken);
+        setAccessTokenCookie(res, newAccessToken);
         // res.cookie("accessToken", newAccessToken, {
         //   httpOnly: true,
         //   secure: process.env.NODE_ENV === "production",
@@ -539,7 +547,11 @@ export const forgotPassword = async (req, res) => {
 
     await user.update({ otp, otp_expiry: expiry });
 
-    return appapiResponse.successResponseWithData(res, "OTP sent successfully", email);
+    return appapiResponse.successResponseWithData(
+      res,
+      "OTP sent successfully",
+      email
+    );
   } catch (err) {
     return appapiResponse.ErrorResponse(res, err.message);
   }
@@ -566,7 +578,10 @@ export const verifyOtp = async (req, res) => {
       return appapiResponse.successResponseWithData(res, "OTP expired");
     }
 
-    return appapiResponse.successResponseWithData(res, "OTP verified successfully");
+    return appapiResponse.successResponseWithData(
+      res,
+      "OTP verified successfully"
+    );
   } catch (err) {
     return appapiResponse.ErrorResponse(res, err.message);
   }
@@ -593,7 +608,10 @@ export const AppresetPassword = async (req, res) => {
       otp_expiry: null,
     });
 
-    return appapiResponse.successResponseWithData(res, "Password reset successfully");
+    return appapiResponse.successResponseWithData(
+      res,
+      "Password reset successfully"
+    );
   } catch (err) {
     return appapiResponse.ErrorResponse(res, err.message);
   }
@@ -618,7 +636,11 @@ export const AppupdatePassword = async (req, res) => {
     // Compare current password
     const passwordMatch = await bcrypt.compare(currentPassword, user.password);
     if (!passwordMatch) {
-      return appapiResponse.validationErrorWithData(res, "Current password is incorrect", null);
+      return appapiResponse.validationErrorWithData(
+        res,
+        "Current password is incorrect",
+        null
+      );
     }
 
     // Hash new password
@@ -630,7 +652,10 @@ export const AppupdatePassword = async (req, res) => {
       otp_expiry: null,
     });
 
-    return appapiResponse.successResponseWithData(res, "Password updated successfully");
+    return appapiResponse.successResponseWithData(
+      res,
+      "Password updated successfully"
+    );
   } catch (err) {
     return appapiResponse.ErrorResponse(res, err.message);
   }
@@ -652,7 +677,11 @@ export const webforgotPassword = async (req, res) => {
 
     await user.update({ otp, otp_expiry: expiry });
 
-    return apiResponse.successResponseWithData(res, "OTP sent successfully", email);
+    return apiResponse.successResponseWithData(
+      res,
+      "OTP sent successfully",
+      email
+    );
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }
@@ -678,7 +707,10 @@ export const webverifyOtp = async (req, res) => {
       return apiResponse.successResponseWithData(res, "OTP expired");
     }
 
-    return apiResponse.successResponseWithData(res, "OTP verified successfully");
+    return apiResponse.successResponseWithData(
+      res,
+      "OTP verified successfully"
+    );
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }
@@ -705,7 +737,10 @@ export const webresetPassword = async (req, res) => {
       otp_expiry: null,
     });
 
-    return apiResponse.successResponseWithData(res, "Password reset successfully");
+    return apiResponse.successResponseWithData(
+      res,
+      "Password reset successfully"
+    );
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }
@@ -730,7 +765,11 @@ export const webupdatePassword = async (req, res) => {
     // Compare current password
     const passwordMatch = await bcrypt.compare(currentPassword, user.password);
     if (!passwordMatch) {
-      return apiResponse.validationErrorWithData(res, "Current password is incorrect", null);
+      return apiResponse.validationErrorWithData(
+        res,
+        "Current password is incorrect",
+        null
+      );
     }
 
     // Hash new password
@@ -742,9 +781,11 @@ export const webupdatePassword = async (req, res) => {
       otp_expiry: null,
     });
 
-    return apiResponse.successResponseWithData(res, "Password updated successfully");
+    return apiResponse.successResponseWithData(
+      res,
+      "Password updated successfully"
+    );
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }
 };
-

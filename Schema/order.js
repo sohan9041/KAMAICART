@@ -1,7 +1,7 @@
-// models/Order.js
 import { DataTypes } from "sequelize";
 import { sequelize } from "../Config/connectDb.js";
 import UserAddress from "./userAddress.js";
+import PaymentMethod from "./paymentMethod.js";
 
 const Order = sequelize.define(
   "Order",
@@ -15,9 +15,29 @@ const Order = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    subtotal: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    shipping: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    tax: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      defaultValue: 0,
+    },
     total_amount: {
       type: DataTypes.FLOAT,
       allowNull: false,
+      defaultValue: 0,
+    },
+    promo_code: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     status: {
       type: DataTypes.ENUM("pending", "confirmed", "shipped", "delivered", "cancelled"),
@@ -39,12 +59,18 @@ const Order = sequelize.define(
     razorpay_payment_id: {
       type: DataTypes.TEXT,
       allowNull: true,
-    }
+    },
   },
   {
     tableName: "orders",
     timestamps: true,
   }
 );
+
+Order.belongsTo(UserAddress, { foreignKey: "address_id", as: "address" });
+Order.belongsTo(PaymentMethod, {
+  foreignKey: "payment_id",
+  as: "payment_method",
+});
 
 export default Order;

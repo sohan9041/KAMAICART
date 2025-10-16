@@ -45,6 +45,7 @@ export const addPaymentMethod = async (req, res) => {
 export const updatePaymentMethod = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(id);
     const updates = req.body;
 
     const method = await PaymentMethod.findByPk(id);

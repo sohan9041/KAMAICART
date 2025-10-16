@@ -3,6 +3,7 @@ import { getStates, getCitiesByState } from "../Controllers/stateCityController.
 import { verifyUser } from "../Middleware/verifyAuthMiddleware.js";
 import {
   appaddToCart,
+  appbuyNowAddToCart,
   appgetCart,
   appremoveFromCart,
   appupdateCartQuantity
@@ -24,5 +25,7 @@ router.get("/order-history", verifyUser, appgetOrderHistory);
 router.get("/order-details/:id", verifyUser, appgetOrderDetails);
 router.post("/cancel-order", verifyUser, appcancelOrder);
 router.post("/re-order", verifyUser, appreorder);
+router.post("/buyNow", verifyUser, appbuyNowAddToCart);
+
 
 export default router;

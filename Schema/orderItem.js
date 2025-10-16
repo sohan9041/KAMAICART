@@ -3,6 +3,7 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "../Config/connectDb.js";
 import Product from "./product.js";
 import Order from "./order.js";
+import ProductVariant from "./productVariant.js";
 
 const OrderItem = sequelize.define(
   "OrderItem",
@@ -43,5 +44,7 @@ const OrderItem = sequelize.define(
 Order.hasMany(OrderItem, { foreignKey: "order_id", as: "items" });
 OrderItem.belongsTo(Order, { foreignKey: "order_id" });
 OrderItem.belongsTo(Product, { foreignKey: "product_id", as: "product" });
+OrderItem.belongsTo(ProductVariant, { foreignKey: "variant_id", as: "variant" });
+
 
 export default OrderItem;

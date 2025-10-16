@@ -24,8 +24,10 @@ import {
   removeFromWishlistweb
 } from "../Controllers/wishlistController.js";
 
+
 import { optionalAuthHeader,verifyUser,cookiesVerifyUser,optionalAuthCookie } from "../Middleware/verifyAuthMiddleware.js";
 import { uploadProductImages } from "../Middleware/imageUploadMiddleware.js";
+import { appbuyNowAddToCart, buyNowAddToCart } from "../Controllers/cartController.js";
 
 const router = express.Router();
 
@@ -44,6 +46,9 @@ router.delete("/wishlist/:id", verifyUser, removeFromWishlist);
 router.post("/wishlistweb", cookiesVerifyUser, addToWishlistweb);
 router.get("/wishlistweb", cookiesVerifyUser, getWishlistweb);
 router.delete("/wishlistweb/:id", cookiesVerifyUser, removeFromWishlistweb);
+
+router.post("/buyNowWeb", cookiesVerifyUser, buyNowAddToCart);
+
 
 // Product Routes
 router.post("/removeAttributeInProduct", cookiesVerifyUser, removeAttributeInProduct);
