@@ -23,17 +23,14 @@ export const placeOrder = async (req, res) => {
     if (!address_id) return apiResponse.ErrorResponse(res, "Address ID is required");
     if (!payment_id) return apiResponse.ErrorResponse(res, "Payment ID is required");
 
-    // 🧾 Fetch payment method details
     const paymentMethod = await PaymentMethod.findOne({
       where: { id: payment_id },
       attributes: ["id", "name", "mode", "image"],
     });
 
-    if (!paymentMethod) {
-      return apiResponse.notFoundResponse(res, "Payment method not found");
-    }
+    if (!paymentMethod) return apiResponse.notFoundResponse(res, "Payment method not found");
 
-    // 🛒 Get cart items
+    // 🛒 Fetch cart items
     const cartItems = await Cart.findAll({
       where: { user_id: userId },
       include: [
@@ -41,15 +38,8 @@ export const placeOrder = async (req, res) => {
           model: Product,
           as: "product",
           where: { is_deleted: false },
-          attributes: ["id", "name", "short_description", "category_id"],
+          attributes: ["id", "name", "short_description", "category_id", "shop_id"],
           include: [
-            {
-              model: ProductImage,
-              as: "images",
-              where: { is_deleted: false },
-              required: false,
-              attributes: ["id", "image_url", "is_primary"],
-            },
             {
               model: ProductVariant,
               as: "variants",
@@ -81,13 +71,6 @@ export const placeOrder = async (req, res) => {
                 { model: AttributeValue, as: "attribute_value", attributes: ["id", "value"] },
               ],
             },
-            {
-              model: ProductImage,
-              as: "variant_images",
-              where: { is_deleted: false },
-              required: false,
-              attributes: ["id", "image_url", "is_primary"],
-            },
           ],
         },
       ],
@@ -95,150 +78,99 @@ export const placeOrder = async (req, res) => {
 
     if (!cartItems.length) return apiResponse.ErrorResponse(res, "Cart is empty");
 
-    let subtotal = 0;
-    const items = [];
-
-    for (const item of cartItems) {
-      let price = 0;
-      let originalPrice = 0;
-      let variantData = item.variant || null;
-
-      // ✅ Determine price
-      if (variantData) {
-        price = variantData.selling_price;
-        originalPrice = variantData.original_price;
-      } else {
-        const firstVariant = await ProductVariant.findOne({
-          where: { product_id: item.product_id, is_deleted: false },
-          include: [
-            {
-              model: ProductVariantAttributeValue,
-              as: "attributes",
-              include: [
-                { model: Attribute, as: "attribute", attributes: ["id", "name", "input_type"] },
-                { model: AttributeValue, as: "attribute_value", attributes: ["id", "value"] },
-              ],
-            },
-          ],
-          order: [["id", "ASC"]],
-        });
-        if (firstVariant) {
-          variantData = firstVariant;
-          price = firstVariant.selling_price;
-          originalPrice = firstVariant.original_price;
-        }
-      }
-
-      subtotal += price * item.quantity;
-
-      // ✅ Pick best image
-      let primaryImage = null;
-      if (variantData?.variant_images?.length) {
-        const variantPrimary = variantData.variant_images.find((img) => img.is_primary);
-        primaryImage = variantPrimary
-          ? variantPrimary.image_url
-          : variantData.variant_images[0]?.image_url || null;
-      }
-      if (!primaryImage && item.product?.images?.length) {
-        const productPrimary = item.product.images.find((img) => img.is_primary);
-        primaryImage = productPrimary
-          ? productPrimary.image_url
-          : item.product.images[0]?.image_url || null;
-      }
-      if (!primaryImage && item.product?.variants?.length) {
-        for (const v of item.product.variants) {
-          if (v.variant_images?.length) {
-            const img = v.variant_images.find((i) => i.is_primary) || v.variant_images[0];
-            if (img) {
-              primaryImage = img.image_url;
-              break;
-            }
-          }
-        }
-      }
-
-      items.push({
-        id: item.product_id,
-        name: item.product.name,
-        image: primaryImage,
-        quantity: item.quantity,
-        sellingPrice: price,
-        originalPrice: originalPrice,
-        variant: variantData
-          ? {
-              id: variantData.id,
-              attributes: variantData.attributes?.map((a) => ({
-                id: a.id,
-                name: a.attribute.name,
-                value: a.attribute_value.value,
-              })),
-            }
-          : null,
-      });
-    }
-
-    // ✅ Totals
-    const tax = parseFloat((subtotal * 0.1).toFixed(2)); // 10%
-    const shipping = 0;
-    const totalAmount = parseFloat((subtotal + tax + shipping).toFixed(2));
-
-    // ✅ Address
     const address = await userAddress.findOne({
       where: { id: address_id, user_id: userId },
     });
 
-    // ✅ Create order
-    const order = await Order.create({
-      user_id: userId,
-      address_id,
-      payment_id,
-      total_amount: totalAmount,
-      razorpay_payment_id: razorpay_payment_id,
-      subtotal,
-      tax,
-      shipping,
-      status: "pending",
-    });
+    if (!address) return apiResponse.ErrorResponse(res, "Address not found");
 
-    // ✅ Order items
-    const orderItems = cartItems.map((item) => ({
-      order_id: order.id,
-      product_id: item.product_id,
-      variant_id: item.variant_id || (item.variant ? item.variant.id : null),
-      quantity: item.quantity,
-      price: items.find((i) => i.id === item.product_id).sellingPrice,
-    }));
-    await OrderItem.bulkCreate(orderItems);
+    // 🧩 Group items by seller/shop_id
+    const groupedBySeller = {};
+    for (const item of cartItems) {
+      const shopId = item.product.shop_id;
+      if (!groupedBySeller[shopId]) groupedBySeller[shopId] = [];
+      groupedBySeller[shopId].push(item);
+    }
 
-    // ✅ Clear cart
+    const allOrders = [];
+
+    for (const [sellerId, itemsList] of Object.entries(groupedBySeller)) {
+      let subtotal = 0;
+      const orderItemsData = [];
+
+      for (const item of itemsList) {
+        const variantData = item.variant || null;
+        let price = 0;
+
+        if (variantData) price = variantData.selling_price;
+        else {
+          const firstVariant = await ProductVariant.findOne({
+            where: { product_id: item.product_id, is_deleted: false },
+            order: [["id", "ASC"]],
+          });
+          if (firstVariant) price = firstVariant.selling_price;
+        }
+
+        subtotal += price * item.quantity;
+
+        orderItemsData.push({
+          product_id: item.product_id,
+          variant_id: item.variant_id || variantData?.id || null,
+          quantity: item.quantity,
+          price,
+        });
+      }
+
+      const tax = parseFloat((subtotal * 0.1).toFixed(2));
+      const shipping = 0;
+      const totalAmount = parseFloat((subtotal + tax + shipping).toFixed(2));
+
+      // 🧾 Create order per seller
+      const order = await Order.create({
+        user_id: userId,
+        seller_id: sellerId, // ✅ New column
+        address_id,
+        payment_id,
+        razorpay_payment_id,
+        subtotal,
+        tax,
+        shipping,
+        total_amount: totalAmount,
+        status: "pending",
+      });
+
+      // 🧾 Add order items
+      const orderItems = orderItemsData.map((oi) => ({
+        ...oi,
+        order_id: order.id,
+      }));
+      await OrderItem.bulkCreate(orderItems);
+
+      allOrders.push({
+        orderId: order.id,
+        sellerId,
+        subtotal,
+        tax,
+        shipping,
+        totalAmount,
+        items: orderItemsData,
+      });
+    }
+
+    // 🧹 Clear cart
     await Cart.destroy({ where: { user_id: userId } });
 
-    // ✅ Response
     return res.status(200).json({
       success: true,
-      order: {
-        orderId: order.id,
-        paymentMethod: {
-          id: paymentMethod.id,
-          name: paymentMethod.name,
-          mode: paymentMethod.mode,
-          image: paymentMethod.image,
-        },
-        totalAmount,
-        subtotal,
-        shipping,
-        tax,
-        estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toDateString(),
-        address,
-        items,
-      },
-      message: "Order created successfully",
+      message: "Orders placed successfully (seller-wise)",
+      orders: allOrders,
     });
   } catch (err) {
     console.error(err);
     return apiResponse.ErrorResponse(res, err.message);
   }
 };
+
 
 // ============================
 export const getOrderHistory = async (req, res) => {
@@ -431,7 +363,7 @@ export const getOrderDetails = async (req, res) => {
 export const cancelOrder = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { order_id } = req.body;
+    const { order_id,cancel_reasons } = req.body;
 
     if (!order_id) return apiResponse.ErrorResponse(res, "Order ID is required");
 
@@ -451,6 +383,7 @@ export const cancelOrder = async (req, res) => {
 
     // ✅ Update status
     order.status = "cancelled";
+    order.cancel_reasons=cancel_reasons;
     await order.save();
 
     return apiResponse.successResponseWithData(res, "Order cancelled successfully");
@@ -504,22 +437,27 @@ export const reorder = async (req, res) => {
 export const appplaceOrder = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { address_id, payment_id,razorpay_payment_id=null } = req.body;
+    const { address_id, payment_id, razorpay_payment_id = null } = req.body;
 
-    // ✅ Validate input
-    if (!address_id) {
-      return appapiResponse.ErrorResponse(res, "Address ID is required");
-    }
-    if (!payment_id) {
-      return appapiResponse.ErrorResponse(res, "Payment type is required");
-    }
+    // ✅ Validate inputs
+    if (!address_id) return appapiResponse.ErrorResponse(res, "Address ID is required");
+    if (!payment_id) return appapiResponse.ErrorResponse(res, "Payment type is required");
 
-    // ✅ Get cart items (include variants if any)
+    // ✅ Get all cart items (include products and variants)
     const cartItems = await Cart.findAll({
       where: { user_id: userId },
       include: [
-        { model: Product, as: "product" },
-        { model: ProductVariant, as: "variant", required: false }, // optional variant
+        {
+          model: Product,
+          as: "product",
+          attributes: ["id", "name", "price", "shop_id"],
+        },
+        {
+          model: ProductVariant,
+          as: "variant",
+          required: false,
+          attributes: ["id", "selling_price", "original_price"],
+        },
       ],
     });
 
@@ -527,83 +465,99 @@ export const appplaceOrder = async (req, res) => {
       return appapiResponse.ErrorResponse(res, "Cart is empty");
     }
 
-    // ✅ Calculate total with variant logic
-    let totalAmount = 0;
-
+    // ✅ Group items by seller (shop_id)
+    const itemsBySeller = {};
     for (const item of cartItems) {
-      let sellingPrice = 0;
-
-      if (item.variant_id && item.variant) {
-        // Use variant’s selling price if exists
-        sellingPrice = item.variant.selling_price;
-      } else {
-        // No variant_id → get the first variant of the product
-        const firstVariant = await ProductVariant.findOne({
-          where: { product_id: item.product_id },
-          order: [["id", "ASC"]],
-        });
-
-        sellingPrice = firstVariant
-          ? firstVariant.selling_price
-          : item.product.price; // fallback
-      }
-
-      totalAmount += item.quantity * sellingPrice;
+      const sellerId = item.product.shop_id;
+      if (!itemsBySeller[sellerId]) itemsBySeller[sellerId] = [];
+      itemsBySeller[sellerId].push(item);
     }
 
-    // ✅ Create order
-    const order = await Order.create({
-      user_id: userId,
-      address_id,
-      payment_id,
-      total_amount: totalAmount,
-      razorpay_payment_id:razorpay_payment_id,
-      status: "pending",
-    });
+    const allOrders = [];
 
-    // ✅ Create order items
-    const orderItems = [];
+    // ✅ Loop each seller group
+    for (const [sellerId, sellerItems] of Object.entries(itemsBySeller)) {
+      let subtotal = 0;
 
-    for (const item of cartItems) {
-      let sellingPrice = 0;
+      // Calculate total for this seller
+      for (const item of sellerItems) {
+        const price =
+          item.variant?.selling_price ||
+          (await ProductVariant.findOne({
+            where: { product_id: item.product_id },
+            order: [["id", "ASC"]],
+          }))?.selling_price ||
+          item.product.price;
 
-      if (item.variant_id && item.variant) {
-        sellingPrice = item.variant.selling_price;
-      } else {
-        const firstVariant = await ProductVariant.findOne({
-          where: { product_id: item.product_id },
-          order: [["id", "ASC"]],
-        });
-
-        sellingPrice = firstVariant
-          ? firstVariant.selling_price
-          : item.product.price;
+        subtotal += price * item.quantity;
       }
 
-      orderItems.push({
-        order_id: order.id,
-        product_id: item.product_id,
-        variant_id: item.variant_id || (firstVariant ? firstVariant.id : null),
-        quantity: item.quantity,
-        price: sellingPrice,
+      const tax = parseFloat((subtotal * 0.1).toFixed(2));
+      const shipping = 0;
+      const totalAmount = subtotal + tax + shipping;
+
+      // ✅ Create seller-wise order
+      const order = await Order.create({
+        user_id: userId,
+        seller_id: sellerId, // ✅ add seller_id
+        address_id,
+        payment_id,
+        razorpay_payment_id,
+        subtotal,
+        tax,
+        shipping,
+        total_amount: totalAmount,
+        status: "pending",
       });
+
+      // ✅ Add order items
+      const orderItems = [];
+
+      for (const item of sellerItems) {
+        const variantId = item.variant_id
+          ? item.variant_id
+          : (
+              await ProductVariant.findOne({
+                where: { product_id: item.product_id },
+                order: [["id", "ASC"]],
+              })
+            )?.id || null;
+
+        const price =
+          item.variant?.selling_price ||
+          (await ProductVariant.findOne({
+            where: { id: variantId },
+          }))?.selling_price ||
+          item.product.price;
+
+        orderItems.push({
+          order_id: order.id,
+          product_id: item.product_id,
+          variant_id: variantId,
+          quantity: item.quantity,
+          price,
+        });
+      }
+
+      await OrderItem.bulkCreate(orderItems);
+      allOrders.push(order);
     }
 
-    await OrderItem.bulkCreate(orderItems);
-
-    // ✅ Clear user cart
+    // ✅ Clear user cart after all orders
     await Cart.destroy({ where: { user_id: userId } });
 
-    // ✅ Return response
+    // ✅ Response
     return appapiResponse.successResponseWithData(
       res,
-      "Order placed successfully",
-      order
+      "Orders placed successfully (seller-wise)",
+      allOrders
     );
   } catch (err) {
+    console.error(err);
     return appapiResponse.ErrorResponse(res, err.message);
   }
 };
+
 
 // ============================
 // 📱 APP - Order History

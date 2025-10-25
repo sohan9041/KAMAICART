@@ -647,26 +647,20 @@ export const getAppProductList = async (req, res) => {
   try {
     const userId = req.user?.id || null;
 
-    // ✅ Pagination
     const page = parseInt(req.body.page) || 1;
     const limit = parseInt(req.body.limit) || 10;
     const offset = (page - 1) * limit;
 
-    // ✅ Filters
     const { maincategory_id, subcategory_id, childcategory_id, search } = req.body;
 
-    // ✅ Dynamic where condition
     const whereCondition = { is_deleted: false };
 
     if (maincategory_id) whereCondition.maincategory_id = maincategory_id;
     if (subcategory_id) whereCondition.subcategory_id = subcategory_id;
     if (childcategory_id) whereCondition.category_id = childcategory_id;
 
-    // ✅ 🔍 Search by product name or description
     if (search && search.trim() !== "") {
-      whereCondition[Op.or] = [
-        { name: { [Op.like]: `%${search}%` } },
-      ];
+      whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
     }
 
     // ✅ Get wishlist product IDs
@@ -738,15 +732,16 @@ export const getAppProductList = async (req, res) => {
               attributes: ["id", "image_url", "is_primary"],
             },
           ],
+          order: [["id", "ASC"]], // ✅ Order variants ascending
         },
       ],
       limit,
       offset,
       distinct: true,
-      order: [["id", "DESC"]],
+      order: [["id", "ASC"]], // ✅ Order products ascending
     });
 
-    // ✅ Format output
+    // ✅ Format output with discount
     const formattedProducts = products.map((p) => ({
       id: p.id,
       name: p.name,
@@ -761,29 +756,37 @@ export const getAppProductList = async (req, res) => {
         p.images[0]?.image_url ||
         null,
       gallery: p.images.map((img) => img.image_url),
-      variants: p.variants.map((v) => ({
-        id: v.id,
-        sku: v.sku,
-        price: v.price,
-        selling_price: v.selling_price,
-        shipping_cost: v.shipping_cost,
-        stock: v.stock,
-        is_default: v.is_default,
-        attributes: v.attributes.map((attr) => ({
-          attribute_id: attr.attribute.id,
-          attribute_name: attr.attribute.name,
-          value_id: attr.attribute_value.id,
-          value: attr.attribute_value.value,
-        })),
-        images: v.variant_images.map((vi) => ({
-          id: vi.id,
-          url: vi.image_url,
-          is_primary: vi.is_primary,
-        })),
-      })),
+      variants: p.variants.map((v) => {
+        // ✅ Calculate discount
+        const discount =
+          v.price > 0
+            ? Math.round(((v.price - v.selling_price) / v.price) * 100)
+            : 0;
+
+        return {
+          id: v.id,
+          sku: v.sku,
+          price: Number(v.price),
+          selling_price: Number(v.selling_price),
+          shipping_cost: Number(v.shipping_cost),
+          stock: v.stock,
+          is_default: v.is_default,
+          discount, // ✅ Added discount field
+          attributes: v.attributes.map((attr) => ({
+            attribute_id: attr.attribute.id,
+            attribute_name: attr.attribute.name,
+            value_id: attr.attribute_value.id,
+            value: attr.attribute_value.value,
+          })),
+          images: v.variant_images.map((vi) => ({
+            id: vi.id,
+            url: vi.image_url,
+            is_primary: vi.is_primary,
+          })),
+        };
+      }),
     }));
 
-    // ✅ Pagination Info
     const totalPages = Math.ceil(count / limit);
 
     return appapiResponse.successResponseWithData(
@@ -801,7 +804,6 @@ export const getAppProductList = async (req, res) => {
     return appapiResponse.ErrorResponse(res, error.message);
   }
 };
-
 
 
 export const removeAttributeInProduct = async (req, res) => {
@@ -838,9 +840,6 @@ export const removeAttributeInProduct = async (req, res) => {
   }
 };
 
-/**
- * Get 10 random products (Trending)
- */
 export const getRandomProducts = async (req, res) => {
   try {
     const userId = req.user?.id || null; // from optionalAuthCookie
@@ -913,9 +912,6 @@ export const getRandomProducts = async (req, res) => {
   }
 };
 
-/**
- * Get top rated products (dummy - random for now)
- */
 export const getTopRatedProducts = async (req, res) => {
   try {
     const userId = req.user?.id || null; // from optionalAuthCookie
@@ -988,9 +984,6 @@ export const getTopRatedProducts = async (req, res) => {
   }
 };
 
-/**
- * Get all products with pagination
- */
 export const getWebAllProducts = async (req, res) => {
   try {
     const userId = req.user?.id || null;

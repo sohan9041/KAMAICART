@@ -84,9 +84,6 @@ app.use("/paymentMethod", paymentMethodRoutes);
 app.use("/promoCode", promoCodeRoutes);
 app.use("/cancelReason", cancelReasonRoutes);
 
-
-
-
 app.use(morgan("dev"));
 app.use(
   helmet({

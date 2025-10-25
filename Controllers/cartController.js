@@ -11,7 +11,6 @@ import appapiResponse from "../Helper/appapiResponse.js";
 import Order from "../Schema/order.js";
 import OrderItem from "../Schema/orderItem.js";
 
-
 // Add to cart
 export const addToCart = async (req, res) => {
   try {
@@ -447,48 +446,94 @@ export const appupdateCartQuantity = async (req, res) => {
   }
 };
 
-
 export const buyNowAddToCart = async (req, res) => {
   try {
-    const { product_id, variant_id = null, quantity = 1 } = req.body;
     const userId = req.user.id;
+    const {
+      product_id,
+      variant_id = null,
+      quantity = 1,
+      address_id,
+      payment_id,
+      razorpay_payment_id = null,
+    } = req.body;
 
-    // ✅ Step 1: Remove any existing buy_now item for the user (keep cart clean)
-    await Cart.destroy({
-      where: { user_id: userId, is_buy_now: true },
+    // ✅ Validate required fields
+    if (!product_id) return apiResponse.ErrorResponse(res, "Product ID is required");
+    if (!address_id) return apiResponse.ErrorResponse(res, "Address ID is required");
+    if (!payment_id) return apiResponse.ErrorResponse(res, "Payment type is required");
+
+    // ✅ Fetch product with shop_id (seller reference)
+    const product = await Product.findByPk(product_id, {
+      attributes: ["id", "title", "price", "shop_id"],
     });
 
-    // ✅ Step 2: Add new buy now item
-    const whereCondition = {
-      user_id: userId,
-      product_id,
-    };
-    if (variant_id) whereCondition.variant_id = variant_id;
+    if (!product) return apiResponse.ErrorResponse(res, "Product not found");
 
-    const existing = await Cart.findOne({ where: whereCondition });
+    // ✅ Determine variant and price
+    let selectedVariant = null;
+    let sellingPrice = 0;
 
-    if (existing) {
-      // ✅ If same item already exists, update it to be "buy now"
-      existing.quantity = quantity;
-      existing.is_buy_now = true;
-      await existing.save();
+    if (variant_id) {
+      selectedVariant = await ProductVariant.findOne({
+        where: { id: variant_id, product_id },
+      });
 
-      return apiResponse.successResponseWithData(
-        res,
-        "Buy now item updated successfully",
-        existing
-      );
+      if (!selectedVariant) {
+        return apiResponse.ErrorResponse(res, "Invalid variant selected");
+      }
+
+      sellingPrice = selectedVariant.selling_price;
+    } else {
+      // No variant selected → use first variant or base product price
+      selectedVariant = await ProductVariant.findOne({
+        where: { product_id },
+        order: [["id", "ASC"]],
+      });
+
+      sellingPrice = selectedVariant
+        ? selectedVariant.selling_price
+        : product.price;
     }
 
-    // ✅ Step 3: Create new buy now cart record
-    const cart = await Cart.create({
+    // ✅ Calculate total amount
+    const totalAmount = sellingPrice * quantity;
+
+    // ✅ Create order (include seller_id from product.shop_id)
+    const order = await Order.create({
       user_id: userId,
-      product_id,
-      variant_id,
-      quantity
+      seller_id: product.shop_id, // 👈 added seller reference
+      address_id,
+      payment_id,
+      total_amount: totalAmount,
+      razorpay_payment_id: razorpay_payment_id,
+      status: "pending",
+      is_buy_now: true,
     });
 
-    return apiResponse.successResponseWithData(res, "Buy now item added", cart);
+    // ✅ Create order item
+    await OrderItem.create({
+      order_id: order.id,
+      product_id,
+      variant_id: variant_id || (selectedVariant ? selectedVariant.id : null),
+      quantity,
+      price: sellingPrice,
+    });
+
+    // ✅ Return success response
+    return apiResponse.successResponseWithData(
+      res,
+      "Buy now order placed successfully",
+      {
+        order,
+        item: {
+          product_id,
+          variant_id,
+          quantity,
+          price: sellingPrice,
+        },
+      }
+    );
   } catch (error) {
     console.error("Error in buyNowAddToCart:", error);
     return apiResponse.ErrorResponse(res, error.message);
@@ -508,21 +553,20 @@ export const appbuyNowAddToCart = async (req, res) => {
     } = req.body;
 
     // ✅ Validate required fields
-    if (!product_id) {
+    if (!product_id)
       return appapiResponse.ErrorResponse(res, "Product ID is required");
-    }
-    if (!address_id) {
+    if (!address_id)
       return appapiResponse.ErrorResponse(res, "Address ID is required");
-    }
-    if (!payment_id) {
+    if (!payment_id)
       return appapiResponse.ErrorResponse(res, "Payment type is required");
-    }
 
-    // ✅ Fetch product
-    const product = await Product.findByPk(product_id);
-    if (!product) {
+    // ✅ Fetch product (to get shop_id as seller_id)
+    const product = await Product.findByPk(product_id, {
+      attributes: ["id", "price", "shop_id", "title"],
+    });
+
+    if (!product)
       return appapiResponse.ErrorResponse(res, "Product not found");
-    }
 
     // ✅ Determine price (variant or default)
     let selectedVariant = null;
@@ -533,13 +577,12 @@ export const appbuyNowAddToCart = async (req, res) => {
         where: { id: variant_id, product_id },
       });
 
-      if (!selectedVariant) {
+      if (!selectedVariant)
         return appapiResponse.ErrorResponse(res, "Invalid variant selected");
-      }
 
       sellingPrice = selectedVariant.selling_price;
     } else {
-      // No variant selected → use first variant or product base price
+      // If no variant selected → use first variant or product base price
       selectedVariant = await ProductVariant.findOne({
         where: { product_id },
         order: [["id", "ASC"]],
@@ -553,15 +596,16 @@ export const appbuyNowAddToCart = async (req, res) => {
     // ✅ Calculate total amount
     const totalAmount = sellingPrice * quantity;
 
-    // ✅ Create order
+    // ✅ Create order with seller_id from product.shop_id
     const order = await Order.create({
       user_id: userId,
+      seller_id: product.shop_id, // 👈 Added seller_id
       address_id,
       payment_id,
       total_amount: totalAmount,
-      razorpay_payment_id: razorpay_payment_id,
+      razorpay_payment_id,
       status: "pending",
-      is_buy_now: true, // helpful flag
+      is_buy_now: true,
     });
 
     // ✅ Create order item
@@ -573,7 +617,7 @@ export const appbuyNowAddToCart = async (req, res) => {
       price: sellingPrice,
     });
 
-    // ✅ Return success
+    // ✅ Return success response
     return appapiResponse.successResponseWithData(
       res,
       "Buy now order placed successfully",
@@ -588,7 +632,7 @@ export const appbuyNowAddToCart = async (req, res) => {
       }
     );
   } catch (error) {
-    console.error("Error in appBuyNowPlaceOrder:", error);
+    console.error("Error in appbuyNowAddToCart:", error);
     return appapiResponse.ErrorResponse(res, error.message);
   }
 };

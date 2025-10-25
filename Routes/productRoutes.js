@@ -49,7 +49,6 @@ router.delete("/wishlistweb/:id", cookiesVerifyUser, removeFromWishlistweb);
 
 router.post("/buyNowWeb", cookiesVerifyUser, buyNowAddToCart);
 
-
 // Product Routes
 router.post("/removeAttributeInProduct", cookiesVerifyUser, removeAttributeInProduct);
 

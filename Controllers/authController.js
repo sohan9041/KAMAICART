@@ -20,6 +20,7 @@ import {
 } from "../Utils/tokens.js";
 import { saveRefreshTokenRecord } from "../Helper/tokenHelper.js";
 import { Admin } from "../Models/admin.js";
+import { Role } from "../Schema/role.js";
 // Temporary OTP store
 const tempUsers = {};
 export const Signup = async (req, res) => {
@@ -297,16 +298,34 @@ export const resetPassword = async (req, res) => {
 export const profile = async (req, res) => {
   try {
     const decoded = req.user;
+
     const user = await User.findOne({
       where: { id: decoded.id },
       attributes: { exclude: ["password"] },
+      include: [
+        {
+          model: Role, // ✅ Assuming Role model is associated with User
+          as: "role",  // ✅ The alias you used in your association
+          attributes: ["id", "name"], // Only fetch what you need
+        },
+      ],
     });
+
     if (!user) return apiResponse.notFoundResponse(res, "User not found");
-    return apiResponse.successResponseWithData(res, "Profile fetched", user);
+
+    // ✅ Format response (optional): add role_name directly
+    const userData = {
+      ...user.toJSON(),
+      role_name: user.role ? user.role.name : null,
+    };
+
+    return apiResponse.successResponseWithData(res, "Profile fetched", userData);
   } catch (err) {
+    console.error(err);
     return apiResponse.forbiddenResponse(res, "Invalid or expired token");
   }
 };
+
 
 //update profile
 export const updateProfile = async (req, res) => {

@@ -2,6 +2,7 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "../Config/connectDb.js";
 import UserAddress from "./userAddress.js";
 import PaymentMethod from "./paymentMethod.js";
+import { User } from "./user.js";
 
 const Order = sequelize.define(
   "Order",
@@ -12,6 +13,10 @@ const Order = sequelize.define(
       primaryKey: true,
     },
     user_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    seller_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
@@ -60,6 +65,10 @@ const Order = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    cancel_reasons: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    }
   },
   {
     tableName: "orders",
@@ -72,5 +81,6 @@ Order.belongsTo(PaymentMethod, {
   foreignKey: "payment_id",
   as: "payment_method",
 });
+Order.belongsTo(User, { foreignKey: "user_id", as: "user" });
 
 export default Order;

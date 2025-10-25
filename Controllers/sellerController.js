@@ -11,6 +11,7 @@ import {
 import apiResponse from "../Helper/apiResponse.js";
 import bcrypt from "bcryptjs";
 import { Op } from "sequelize";
+import { Role } from "../Schema/role.js";
 
 // 🔹 Create Seller
 export const createSeller = async (req, res) => {
@@ -440,6 +441,37 @@ export const genratePassword = async (req, res) => {
     );
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+export const profile = async (req, res) => {
+  try {
+    const decoded = req.user;
+
+    const user = await User.findOne({
+      where: { id: decoded.id },
+      attributes: { exclude: ["password"] },
+      include: [
+        {
+          model: Role, // ✅ Assuming Role model is associated with User
+          as: "role",  // ✅ The alias you used in your association
+          attributes: ["id", "name"], // Only fetch what you need
+        },
+      ],
+    });
+
+    if (!user) return apiResponse.notFoundResponse(res, "User not found");
+
+    // ✅ Format response (optional): add role_name directly
+    const userData = {
+      ...user.toJSON(),
+      role_name: user.role ? user.role.name : null,
+    };
+
+    return apiResponse.successResponseWithData(res, "Profile fetched", userData);
+  } catch (err) {
+    console.error(err);
+    return apiResponse.forbiddenResponse(res, "Invalid or expired token");
   }
 };
 

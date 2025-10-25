@@ -23,17 +23,19 @@ export const createCancelReason = async (req, res) => {
 // ✅ Get All Cancel Reasons
 export const getCancelReasonList = async (req, res) => {
   try {
-    const records = await CancelReason.findAll({ where: { is_delete: false } });
+    const records = await CancelReason.findAll({
+      where: { is_delete: false },
+      attributes: { exclude: ["is_delete", "createdAt", "updatedAt"] },
+      order: [["id", "ASC"]], // ✅ Order by id ascending
+    });
 
-    const updatedRecords = records.map((item) => ({
-      ...item.dataValues,
-    }));
-
-    return apiResponse.successResponseWithData(res, "Fetched successfully", updatedRecords);
+    return apiResponse.successResponseWithData(res, "Fetched successfully", records);
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
   }
 };
+
+
 
 // ✅ Get Cancel Reason by ID
 export const getCancelReasonById = async (req, res) => {
