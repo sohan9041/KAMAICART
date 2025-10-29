@@ -33,21 +33,12 @@ const router = express.Router();
 
 router.post("/home-list",optionalAuthHeader, getAppProductList);
 
-router.get("/trending-product",optionalAuthCookie,getRandomProducts);
-router.get("/top-rated",optionalAuthCookie,getTopRatedProducts);
-router.post("/all-products",optionalAuthCookie, getWebAllProducts);
-router.post("/similar-products",optionalAuthCookie, getSimilarProducts);
-router.get("/details/:id", optionalAuthCookie, getProductDetails);
-
 router.post("/wishlist", verifyUser, addToWishlist);
 router.get("/wishlist", verifyUser, getWishlist);
 router.delete("/wishlist/:id", verifyUser, removeFromWishlist);
 
-router.post("/wishlistweb", cookiesVerifyUser, addToWishlistweb);
-router.get("/wishlistweb", cookiesVerifyUser, getWishlistweb);
-router.delete("/wishlistweb/:id", cookiesVerifyUser, removeFromWishlistweb);
 
-router.post("/buyNowWeb", cookiesVerifyUser, buyNowAddToCart);
+
 
 // Product Routes
 router.post("/removeAttributeInProduct", cookiesVerifyUser, removeAttributeInProduct);

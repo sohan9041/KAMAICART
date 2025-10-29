@@ -30,6 +30,9 @@ import paymentMethodRoutes from "./Routes/paymentMethodRoutes.js";
 import promoCodeRoutes from "./Routes/promoCodeRoutes.js";
 import cancelReasonRoutes from "./Routes/cancelReasonRoutes.js";
 
+import webRoutes from "./Routes/webRoutes.js";
+
+
 
 const app = express();
 app.use(cookieParser());
@@ -83,6 +86,8 @@ app.use("/order", orderRoutes);
 app.use("/paymentMethod", paymentMethodRoutes);
 app.use("/promoCode", promoCodeRoutes);
 app.use("/cancelReason", cancelReasonRoutes);
+app.use("/web", webRoutes);
+
 
 app.use(morgan("dev"));
 app.use(

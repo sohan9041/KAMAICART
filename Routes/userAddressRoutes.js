@@ -29,11 +29,7 @@ router.post("/address",verifyUser, AppAddAddress);
 router.post("/address/:id",verifyUser, AppUpdateAddress);
 router.delete("/address/:id",verifyUser, AppDeleteAddress);
 
-router.get("/web/address", cookiesVerifyUser, WebGetAddresses);
-router.get("/web/address/:id", cookiesVerifyUser, WebGetAddressById);
-router.post("/web/address", cookiesVerifyUser, WebAddAddress);
-router.post("/web/address/:id", cookiesVerifyUser, WebUpdateAddress);
-router.delete("/web/address/:id", cookiesVerifyUser, WebDeleteAddress);
+
 
 router.post("/",cookiesVerifyUser, createUser);
 router.get("/",cookiesVerifyUser, getUserList);

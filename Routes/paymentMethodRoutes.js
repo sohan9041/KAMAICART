@@ -15,7 +15,6 @@ import { uploadIcon } from "../Middleware/imageUploadMiddleware.js";
 const router = express.Router();
 
 router.get("/type",verifyUser, getAllPaymentMethodsapp);
-router.get("/web",cookiesVerifyUser, getAllPaymentMethodsweb);
 
 router.post("/",cookiesVerifyUser,uploadIcon.single("image"), addPaymentMethod);
 router.put("/:id",cookiesVerifyUser,uploadIcon.single("image"), updatePaymentMethod);

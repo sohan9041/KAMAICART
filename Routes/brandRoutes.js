@@ -13,7 +13,6 @@ const router = express.Router();
 // -----------------------
 // Brand Routes
 // -----------------------
-router.get("/web", getBrandList);
 
 // Create brand
 router.post("/", cookiesVerifyUser, createBrand);

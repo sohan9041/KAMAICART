@@ -13,6 +13,120 @@ import { AttributeValue } from "../Models/attributeValueModel.js";
 import {ProductImage} from "../Models/productImageModel.js";
 import { PaymentMethod } from "../Models/paymentMethodModel.js";
 
+import { PromoCode } from "../Models/promoCode.js";
+
+export const appCheckout = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { promo_code_id = null } = req.body;
+
+    // ✅ Step 1: Validate user's cart
+    const cartItems = await Cart.findAll({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Product,
+          as: "product",
+          attributes: ["id", "shop_id"],
+        },
+        {
+          model: ProductVariant,
+          as: "variant",
+          required: false,
+          attributes: ["id", "selling_price", "price", "shipping_cost"],
+        },
+      ],
+    });
+
+    if (!cartItems.length)
+      return appapiResponse.ErrorResponse(res, "Your cart is empty");
+
+    // ✅ Step 2: Calculate total cart amount
+    let totalAmount = 0;
+
+    for (const item of cartItems) {
+      let variant = item.variant;
+
+      // if no variant selected, get first variant
+      if (!variant) {
+        variant = await ProductVariant.findOne({
+          where: { product_id: item.product_id },
+          order: [["id", "ASC"]],
+          attributes: ["selling_price", "price", "shipping_cost"],
+        });
+      }
+
+      const price = parseFloat(variant?.selling_price || variant?.price || 0);
+      const shipping = parseFloat(variant?.shipping_cost || 0);
+
+      totalAmount += (price + shipping) * item.quantity;
+    }
+
+    // ✅ Step 3: Apply promo (if promo_id provided)
+    let discountAmount = 0;
+    let appliedPromo = null;
+
+    if (promo_code_id) {
+      const promo = await PromoCode.findOne({
+        where: { id: promo_code_id, is_active: true, is_deleted: false },
+      });
+
+      if (!promo)
+        return appapiResponse.ErrorResponse(res, "Invalid or inactive promo code");
+
+      const now = new Date();
+
+      if (promo.valid_from && now < promo.valid_from)
+        return appapiResponse.ErrorResponse(res, "Promo code not yet active");
+
+      if (promo.valid_to && now > promo.valid_to)
+        return appapiResponse.ErrorResponse(res, "Promo code has expired");
+
+      if (promo.usage_limit > 0 && promo.used_count >= promo.usage_limit)
+        return appapiResponse.ErrorResponse(res, "Promo code usage limit reached");
+
+      if (promo.min_order_value && totalAmount < promo.min_order_value)
+        return appapiResponse.ErrorResponse(
+          res,
+          `Minimum order value should be ₹${promo.min_order_value}`
+        );
+
+      // ✅ Discount calculation
+      if (promo.discount_type === "fixed") {
+        discountAmount = promo.discount_value;
+      } else if (promo.discount_type === "percent") {
+        discountAmount = (promo.discount_value / 100) * totalAmount;
+        if (promo.max_discount && discountAmount > promo.max_discount)
+          discountAmount = promo.max_discount;
+      }
+
+      if (discountAmount > totalAmount) discountAmount = totalAmount;
+
+      appliedPromo = promo;
+    }
+
+    const finalAmount = totalAmount - discountAmount;
+
+    // ✅ Step 4: Return checkout summary
+    return appapiResponse.successResponseWithData(
+      res,
+      "Checkout calculation successful",
+      {
+        total_amount: totalAmount,
+        discount_amount: discountAmount,
+        final_amount: finalAmount,
+        promo_code_id: appliedPromo ? appliedPromo.id : null,
+        promo_code: appliedPromo ? appliedPromo.code : null,
+        discount_type: appliedPromo ? appliedPromo.discount_type : null,
+        discount_value: appliedPromo ? appliedPromo.discount_value : null,
+      }
+    );
+  } catch (error) {
+    console.error("Error in appCheckout:", error);
+    return appapiResponse.ErrorResponse(res, error.message);
+  }
+};
+
 
 // ============================
 export const placeOrder = async (req, res) => {
@@ -23,11 +137,7 @@ export const placeOrder = async (req, res) => {
     if (!address_id) return apiResponse.ErrorResponse(res, "Address ID is required");
     if (!payment_id) return apiResponse.ErrorResponse(res, "Payment ID is required");
 
-    const paymentMethod = await PaymentMethod.findOne({
-      where: { id: payment_id },
-      attributes: ["id", "name", "mode", "image"],
-    });
-
+    const paymentMethod = await PaymentMethod.findOne({ where: { id: payment_id } });
     if (!paymentMethod) return apiResponse.notFoundResponse(res, "Payment method not found");
 
     // 🛒 Fetch cart items
@@ -41,35 +151,11 @@ export const placeOrder = async (req, res) => {
           attributes: ["id", "name", "short_description", "category_id", "shop_id"],
           include: [
             {
-              model: ProductVariant,
-              as: "variants",
+              model: ProductImage,
+              as: "images",
               where: { is_deleted: false },
               required: false,
-              include: [
-                {
-                  model: ProductImage,
-                  as: "variant_images",
-                  where: { is_deleted: false },
-                  required: false,
-                  attributes: ["id", "image_url", "is_primary"],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          model: ProductVariant,
-          as: "variant",
-          where: { is_deleted: false },
-          required: false,
-          include: [
-            {
-              model: ProductVariantAttributeValue,
-              as: "attributes",
-              include: [
-                { model: Attribute, as: "attribute", attributes: ["id", "name", "input_type"] },
-                { model: AttributeValue, as: "attribute_value", attributes: ["id", "value"] },
-              ],
+              attributes: ["id", "image_url", "is_primary"],
             },
           ],
         },
@@ -81,7 +167,6 @@ export const placeOrder = async (req, res) => {
     const address = await userAddress.findOne({
       where: { id: address_id, user_id: userId },
     });
-
     if (!address) return apiResponse.ErrorResponse(res, "Address not found");
 
     // 🧩 Group items by seller/shop_id
@@ -92,30 +177,45 @@ export const placeOrder = async (req, res) => {
       groupedBySeller[shopId].push(item);
     }
 
+    // 📦 Create separate orders but merge totals for response
     const allOrders = [];
+    let grandSubtotal = 0;
+    let grandTax = 0;
+    let grandShipping = 0;
+    let grandTotal = 0;
 
     for (const [sellerId, itemsList] of Object.entries(groupedBySeller)) {
       let subtotal = 0;
       const orderItemsData = [];
+      const orderItemsToSave = [];
 
       for (const item of itemsList) {
-        const variantData = item.variant || null;
-        let price = 0;
+        // ✅ Variant per item
+        const variant = await ProductVariant.findOne({
+          where: { product_id: item.product_id, is_deleted: false },
+          order: [["id", "ASC"]],
+        });
 
-        if (variantData) price = variantData.selling_price;
-        else {
-          const firstVariant = await ProductVariant.findOne({
-            where: { product_id: item.product_id, is_deleted: false },
-            order: [["id", "ASC"]],
-          });
-          if (firstVariant) price = firstVariant.selling_price;
-        }
-
+        const price = variant ? variant.selling_price : 0;
         subtotal += price * item.quantity;
 
+        const image =
+          item.product.images?.find((img) => img.is_primary)?.image_url ||
+          item.product.images?.[0]?.image_url ||
+          null;
+
         orderItemsData.push({
+          id: item.product.id,
+          name: item.product.name,
+          image,
+          quantity: item.quantity,
+          sellingPrice: price,
+        });
+
+        // ✅ Prepare OrderItem for DB
+        orderItemsToSave.push({
           product_id: item.product_id,
-          variant_id: item.variant_id || variantData?.id || null,
+          variant_id: variant ? variant.id : null,
           quantity: item.quantity,
           price,
         });
@@ -125,10 +225,16 @@ export const placeOrder = async (req, res) => {
       const shipping = 0;
       const totalAmount = parseFloat((subtotal + tax + shipping).toFixed(2));
 
+      // Accumulate totals for final response
+      grandSubtotal += subtotal;
+      grandTax += tax;
+      grandShipping += shipping;
+      grandTotal += totalAmount;
+
       // 🧾 Create order per seller
       const order = await Order.create({
         user_id: userId,
-        seller_id: sellerId, // ✅ New column
+        seller_id: sellerId,
         address_id,
         payment_id,
         razorpay_payment_id,
@@ -139,20 +245,26 @@ export const placeOrder = async (req, res) => {
         status: "pending",
       });
 
-      // 🧾 Add order items
-      const orderItems = orderItemsData.map((oi) => ({
+      // 🧾 Add order items to DB (now variant is defined)
+      const finalItems = orderItemsToSave.map((oi) => ({
         ...oi,
         order_id: order.id,
       }));
-      await OrderItem.bulkCreate(orderItems);
+      await OrderItem.bulkCreate(finalItems);
+
+      // 📅 Estimated Delivery (+7 days)
+      const estimatedDelivery = new Date();
+      estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+      const formattedDelivery = estimatedDelivery.toISOString().split("T")[0];
 
       allOrders.push({
-        orderId: order.id,
+        orderId: `ORD${order.id}`,
         sellerId,
         subtotal,
         tax,
         shipping,
         totalAmount,
+        estimatedDelivery: formattedDelivery,
         items: orderItemsData,
       });
     }
@@ -160,10 +272,15 @@ export const placeOrder = async (req, res) => {
     // 🧹 Clear cart
     await Cart.destroy({ where: { user_id: userId } });
 
-    return res.status(200).json({
-      success: true,
-      message: "Orders placed successfully (seller-wise)",
-      orders: allOrders,
+    // ✅ Combined Response (address & totals only once)
+    return apiResponse.successResponseWithData(res, "Orders placed successfully", {
+      address,
+      paymentMethod,
+      subtotal: grandSubtotal,
+      tax: grandTax,
+      shipping: grandShipping,
+      totalAmount: grandTotal,
+      orders: allOrders, // seller-wise list
     });
   } catch (err) {
     console.error(err);
@@ -443,20 +560,20 @@ export const appplaceOrder = async (req, res) => {
     if (!address_id) return appapiResponse.ErrorResponse(res, "Address ID is required");
     if (!payment_id) return appapiResponse.ErrorResponse(res, "Payment type is required");
 
-    // ✅ Get all cart items (include products and variants)
+    // ✅ Get all cart items with related product + variant info
     const cartItems = await Cart.findAll({
       where: { user_id: userId },
       include: [
         {
           model: Product,
           as: "product",
-          attributes: ["id", "name", "price", "shop_id"],
+          attributes: ["id", "name", "shop_id"],
         },
         {
           model: ProductVariant,
           as: "variant",
           required: false,
-          attributes: ["id", "selling_price", "original_price"],
+          attributes: ["id", "price", "selling_price", "shipping_cost"],
         },
       ],
     });
@@ -475,60 +592,58 @@ export const appplaceOrder = async (req, res) => {
 
     const allOrders = [];
 
-    // ✅ Loop each seller group
+    // ✅ Process each seller group
     for (const [sellerId, sellerItems] of Object.entries(itemsBySeller)) {
       let subtotal = 0;
+      let totalShipping = 0;
 
-      // Calculate total for this seller
+      // ✅ Calculate totals for this seller
       for (const item of sellerItems) {
-        const price =
-          item.variant?.selling_price ||
-          (await ProductVariant.findOne({
-            where: { product_id: item.product_id },
-            order: [["id", "ASC"]],
-          }))?.selling_price ||
-          item.product.price;
+        const variant = item.variant
+          ? item.variant
+          : await ProductVariant.findOne({
+              where: { product_id: item.product_id },
+              order: [["id", "ASC"]],
+            });
 
-        subtotal += price * item.quantity;
+        const sellingPrice = parseFloat(variant?.selling_price || 0);
+        const shippingCost = parseFloat(variant?.shipping_cost || 0);
+
+        subtotal += sellingPrice * item.quantity;
+        totalShipping += shippingCost * item.quantity;
       }
 
-      const tax = parseFloat((subtotal * 0.1).toFixed(2));
-      const shipping = 0;
-      const totalAmount = subtotal + tax + shipping;
+      const tax = parseFloat((subtotal * 0.1).toFixed(2)); // 10% tax example
+      const totalAmount = subtotal + tax + totalShipping;
 
-      // ✅ Create seller-wise order
+      // ✅ Create the main order record
       const order = await Order.create({
         user_id: userId,
-        seller_id: sellerId, // ✅ add seller_id
+        seller_id: sellerId,
         address_id,
         payment_id,
         razorpay_payment_id,
         subtotal,
         tax,
-        shipping,
+        shipping: totalShipping,
         total_amount: totalAmount,
         status: "pending",
       });
 
-      // ✅ Add order items
+      // ✅ Create order items for this seller
       const orderItems = [];
-
       for (const item of sellerItems) {
-        const variantId = item.variant_id
-          ? item.variant_id
-          : (
-              await ProductVariant.findOne({
-                where: { product_id: item.product_id },
-                order: [["id", "ASC"]],
-              })
-            )?.id || null;
+        const variant = item.variant
+          ? item.variant
+          : await ProductVariant.findOne({
+              where: { product_id: item.product_id },
+              order: [["id", "ASC"]],
+            });
 
-        const price =
-          item.variant?.selling_price ||
-          (await ProductVariant.findOne({
-            where: { id: variantId },
-          }))?.selling_price ||
-          item.product.price;
+        const variantId = variant?.id || null;
+        const price = parseFloat(variant?.price || 0);
+        const sellingPrice = parseFloat(variant?.selling_price || 0);
+        const shippingCost = parseFloat(variant?.shipping_cost || 0);
 
         orderItems.push({
           order_id: order.id,
@@ -536,6 +651,8 @@ export const appplaceOrder = async (req, res) => {
           variant_id: variantId,
           quantity: item.quantity,
           price,
+          selling_price: sellingPrice,
+          shipping_cost: shippingCost,
         });
       }
 
@@ -543,10 +660,10 @@ export const appplaceOrder = async (req, res) => {
       allOrders.push(order);
     }
 
-    // ✅ Clear user cart after all orders
+    // ✅ Clear user cart after all orders are created
     await Cart.destroy({ where: { user_id: userId } });
 
-    // ✅ Response
+    // ✅ Return response
     return appapiResponse.successResponseWithData(
       res,
       "Orders placed successfully (seller-wise)",
@@ -558,7 +675,6 @@ export const appplaceOrder = async (req, res) => {
   }
 };
 
-
 // ============================
 // 📱 APP - Order History
 // ============================
@@ -566,23 +682,54 @@ export const appgetOrderHistory = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // ✅ Fetch orders and include products + their first image
     const orders = await Order.findAll({
       where: { user_id: userId },
       include: [
         {
           model: OrderItem,
           as: "items",
-          include: [{ model: Product, as: "product" }],
+          include: [
+            {
+              model: Product,
+              as: "product",
+              include: [
+                {
+                  model: ProductImage,
+                  as: "images",
+                  where: { is_deleted: false },
+                  required: false,
+                  attributes: ["id", "image_url", "is_primary"],
+                  order: [["is_primary", "DESC"]],
+                  limit: 1,
+                },
+              ],
+            },
+          ],
         },
       ],
       order: [["createdAt", "DESC"]],
     });
 
-    return appapiResponse.successResponseWithData(res, "Order history", orders);
+    // ✅ Transform response: keep only first image as product.image
+    const formattedOrders = orders.map(order => ({
+      ...order.toJSON(),
+      items: order.items.map(item => {
+        const product = item.product ? item.product.toJSON() : null;
+        if (product) {
+          product.image = product.images?.length ? product.images[0].image_url : null;
+          delete product.images; // remove the images array
+        }
+        return { ...item.toJSON(), product };
+      }),
+    }));
+
+    return appapiResponse.successResponseWithData(res, "Order history", formattedOrders);
   } catch (err) {
     return appapiResponse.ErrorResponse(res, err.message);
   }
 };
+
 
 // ============================
 // 📱 APP - Order Details

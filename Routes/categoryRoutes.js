@@ -18,7 +18,6 @@ const router = express.Router();
 
 //api
 router.get("/all",  getThreeLevelCategories);
-router.get("/megaMenu", getMegaMenu);
 
 
 // ✅ Create

@@ -282,6 +282,29 @@ export const appgetCart = async (req, res) => {
               required: false,
               attributes: ["id", "image_url", "is_primary"],
             },
+            {
+              model: ProductVariant,
+              as: "variants", // ✅ Add all product variants
+              where: { is_deleted: false },
+              required: false,
+              attributes: [
+                "id",
+                "sku",
+                "price",
+                "selling_price",
+                "shipping_cost",
+                "stock",
+              ],
+              include: [
+                {
+                  model: ProductImage,
+                  as: "variant_images",
+                  where: { is_deleted: false },
+                  required: false,
+                  attributes: ["id", "image_url", "is_primary"],
+                },
+              ],
+            },
           ],
         },
         {
@@ -327,28 +350,29 @@ export const appgetCart = async (req, res) => {
     });
 
     const formatted = items.map((i) => {
+      // ✅ If no variant is selected, use first variant from product
       const hasVariant = !!i.variant_id;
-      const variant = i.variant || null;
+      const variant =
+        i.variant ||
+        (i.product.variants && i.product.variants.length > 0
+          ? i.product.variants[0]
+          : null);
 
-      // ✅ Pick correct images
-      const images = hasVariant
-        ? variant?.variant_images || []
+      // ✅ Select correct images
+      const images = variant?.variant_images?.length
+        ? variant.variant_images
         : i.product.images || [];
 
       // ✅ Compute prices
-      const price = parseFloat(
-        hasVariant ? variant?.selling_price || 0 : 0
-      );
-      const originalPrice = parseFloat(
-        hasVariant ? variant?.price || price : price
-      );
+      const price = parseFloat(variant?.selling_price ?? variant?.price ?? 0);
+      const originalPrice = parseFloat(variant?.price ?? variant?.selling_price ?? 0);
       const discount =
         originalPrice > 0
           ? Math.round(((originalPrice - price) / originalPrice) * 100)
           : 0;
 
-      // ✅ Build variant object (only if variant exists)
-      const variantDetails = hasVariant
+      // ✅ Build variant details
+      const variantDetails = variant
         ? {
             id: variant.id,
             sku: variant.sku,
@@ -373,10 +397,9 @@ export const appgetCart = async (req, res) => {
         id: i.id,
         name: i.product.name,
         description: i.product.short_description || "",
-        price: originalPrice.toFixed(2),
-       // originalPrice: originalPrice.toFixed(2),
-        selling_price: price.toFixed(2),
-        discount: discount,
+        price: parseFloat(originalPrice.toFixed(2)),
+        selling_price: parseFloat(price.toFixed(2)),
+        discount,
         image:
           images.find((img) => img.is_primary)?.image_url ||
           images[0]?.image_url ||
@@ -386,7 +409,7 @@ export const appgetCart = async (req, res) => {
         stockStatus: (variant?.stock || 0) > 0 ? "in" : "out",
         onSale: discount > 0,
         quantity: i.quantity,
-        ...(hasVariant && { variant: variantDetails }), // ✅ Include only if variant_id exists
+        ...(variant && { variant: variantDetails }), // ✅ Include only if available
       };
     });
 
@@ -400,6 +423,7 @@ export const appgetCart = async (req, res) => {
     return appapiResponse.ErrorResponse(res, error.message);
   }
 };
+
 
 // Remove from cart
 export const appremoveFromCart = async (req, res) => {
@@ -560,46 +584,46 @@ export const appbuyNowAddToCart = async (req, res) => {
     if (!payment_id)
       return appapiResponse.ErrorResponse(res, "Payment type is required");
 
-    // ✅ Fetch product (to get shop_id as seller_id)
+    // ✅ Fetch product to get seller/shop info
     const product = await Product.findByPk(product_id, {
-      attributes: ["id", "price", "shop_id", "title"],
+      attributes: ["id", "shop_id", "name"],
     });
 
     if (!product)
       return appapiResponse.ErrorResponse(res, "Product not found");
 
-    // ✅ Determine price (variant or default)
-    let selectedVariant = null;
-    let sellingPrice = 0;
+    // ✅ Determine which variant to use
+    let selectedVariant;
 
     if (variant_id) {
+      // Variant explicitly chosen by user
       selectedVariant = await ProductVariant.findOne({
-        where: { id: variant_id, product_id },
+        where: { id: variant_id, product_id, is_deleted: false },
+        attributes: ["id", "selling_price", "shipping_cost", "price"],
       });
 
       if (!selectedVariant)
         return appapiResponse.ErrorResponse(res, "Invalid variant selected");
-
-      sellingPrice = selectedVariant.selling_price;
     } else {
-      // If no variant selected → use first variant or product base price
+      // No variant selected → pick the default or first variant
       selectedVariant = await ProductVariant.findOne({
         where: { product_id },
-        order: [["id", "ASC"]],
+        attributes: ["id", "selling_price", "shipping_cost", "price"],
       });
 
-      sellingPrice = selectedVariant
-        ? selectedVariant.selling_price
-        : product.price;
+      if (!selectedVariant)
+        return appapiResponse.ErrorResponse(res, "No variants found for this product");
     }
 
-    // ✅ Calculate total amount
-    const totalAmount = sellingPrice * quantity;
+    // ✅ Calculate total price
+    const sellingPrice = parseFloat(selectedVariant.selling_price || 0);
+    const shippingCost = parseFloat(selectedVariant.shipping_cost || 0);
+    const totalAmount = (sellingPrice * quantity) + shippingCost;
 
     // ✅ Create order with seller_id from product.shop_id
     const order = await Order.create({
       user_id: userId,
-      seller_id: product.shop_id, // 👈 Added seller_id
+      seller_id: product.shop_id,
       address_id,
       payment_id,
       total_amount: totalAmount,
@@ -612,9 +636,10 @@ export const appbuyNowAddToCart = async (req, res) => {
     await OrderItem.create({
       order_id: order.id,
       product_id,
-      variant_id: variant_id || (selectedVariant ? selectedVariant.id : null),
+      variant_id: selectedVariant.id,
       quantity,
       price: sellingPrice,
+      shipping_cost: shippingCost,
     });
 
     // ✅ Return success response
@@ -625,9 +650,11 @@ export const appbuyNowAddToCart = async (req, res) => {
         order,
         item: {
           product_id,
-          variant_id,
+          variant_id: selectedVariant.id,
           quantity,
-          price: sellingPrice,
+          selling_price: sellingPrice,
+          shipping_cost: shippingCost,
+          total: totalAmount,
         },
       }
     );
@@ -636,4 +663,5 @@ export const appbuyNowAddToCart = async (req, res) => {
     return appapiResponse.ErrorResponse(res, error.message);
   }
 };
+
 

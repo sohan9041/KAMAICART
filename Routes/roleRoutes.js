@@ -14,7 +14,6 @@ const router = express.Router();
 
 
 router.get("/",cookiesVerifyUser, getAllRoles);
-router.get("/get", getAllRolesforWeb);
 router.post("/",cookiesVerifyUser,uploadIcon.single("icon"), createOrUpdateRole);
 router.get("/:id",cookiesVerifyUser, getRoleById);
 router.put("/:id",cookiesVerifyUser, createOrUpdateRole); // update same as createOrUpdate

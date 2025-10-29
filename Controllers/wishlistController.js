@@ -120,9 +120,9 @@ export const getWishlist = async (req, res) => {
       const variants = p.variants.map((v) => ({
         id: v.id,
         sku: v.sku,
-        price: v.price,
-        selling_price: v.selling_price,
-        shipping_cost: v.shipping_cost,
+        price: parseFloat(v.price),
+  selling_price: parseFloat(v.selling_price),
+  shipping_cost: parseFloat(v.shipping_cost),
         stock: v.stock,
         is_default: v.is_default,
         attributes: v.attributes.map((attr) => ({

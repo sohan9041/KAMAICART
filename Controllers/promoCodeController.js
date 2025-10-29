@@ -1,5 +1,6 @@
 import { PromoCode } from "../Models/promoCode.js";
 import apiResponse from "../Helper/apiResponse.js";
+import appapiResponse from "../Helper/appapiResponse.js";
 
 /**
  * ✅ Create Promo Code
@@ -118,5 +119,39 @@ export const deletePromoCode = async (req, res) => {
     );
   } catch (error) {
     return apiResponse.ErrorResponse(res, error.message);
+  }
+};
+
+export const getPromoCodes = async (req, res) => {
+  try {
+    const promos = await PromoCode.findAll({
+      where: { is_deleted: false },
+      order: [["id", "DESC"]],
+    });
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Promo codes fetched successfully",
+      promos
+    );
+  } catch (error) {
+    return apiResponse.ErrorResponse(res, error.message);
+  }
+};
+
+export const getAppPromoCodes = async (req, res) => {
+  try {
+    const promos = await PromoCode.findAll({
+      where: { is_deleted: false },
+      order: [["id", "DESC"]],
+    });
+
+    return appapiResponse.successResponseWithData(
+      res,
+      "Promo codes fetched successfully",
+      promos
+    );
+  } catch (error) {
+    return appapiResponse.ErrorResponse(res, error.message);
   }
 };

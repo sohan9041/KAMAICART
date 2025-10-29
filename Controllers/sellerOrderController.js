@@ -27,6 +27,7 @@ export const getSellerOrders = async (req, res) => {
 
     // 🔹 Base filter
     const orderWhere = { seller_id: sellerId };
+
     if (status) orderWhere.status = status;
 
     if (fromDate || toDate) {
@@ -36,21 +37,24 @@ export const getSellerOrders = async (req, res) => {
     }
 
     // 🔹 Search filter
-    const userWhere =
-      search && isNaN(search)
-        ? {
-            [Op.or]: [
-              { name: { [Op.like]: `%${search}%` } },
-              { email: { [Op.like]: `%${search}%` } },
-            ],
-          }
-        : {};
-
-    if (search && !isNaN(search)) {
-      orderWhere.id = search; // numeric search means orderId
+    let userIncludeWhere = undefined;
+    if (search) {
+      if (!isNaN(search)) {
+        // Numeric → Order ID
+        orderWhere.id = search;
+      } else {
+        // Text → User name / email / phone
+        userIncludeWhere = {
+          [Op.or]: [
+            { name: { [Op.iLike]: `%${search}%` } },
+            { email: { [Op.iLike]: `%${search}%` } },
+            { phoneno: { [Op.iLike]: `%${search}%` } },
+          ],
+        };
+      }
     }
 
-    // 🔹 Fetch orders with associations
+    // 🔹 Fetch orders
     const { count, rows: orders } = await Order.findAndCountAll({
       where: orderWhere,
       include: [
@@ -58,7 +62,8 @@ export const getSellerOrders = async (req, res) => {
           model: User,
           as: "user",
           attributes: ["id", "name", "email", "phoneno"],
-          where: Object.keys(userWhere).length ? userWhere : undefined,
+          required: !!userIncludeWhere,
+          where: userIncludeWhere,
         },
         {
           model: OrderItem,
@@ -105,7 +110,7 @@ export const getSellerOrders = async (req, res) => {
         },
         {
           model: UserAddress,
-          as: "address"
+          as: "address",
         },
         {
           model: PaymentMethod,
@@ -115,7 +120,8 @@ export const getSellerOrders = async (req, res) => {
       ],
       limit,
       offset,
-      distinct: true
+      distinct: true,
+      order: [["createdAt", "DESC"]],
     });
 
     if (!orders.length) {
@@ -127,12 +133,9 @@ export const getSellerOrders = async (req, res) => {
       const items = order.items.map((item) => {
         const product = item.product || {};
         const firstImage = product.images?.[0]?.image_url || null;
-
-        // Extract variant values like "Black, 128GB"
         const variantAttributes = product.variants?.[0]?.attributes || [];
-        const variantValue = variantAttributes
-          .map((attr) => attr.attribute_value?.value)
-          .join(", ") || null;
+        const variantValue =
+          variantAttributes.map((attr) => attr.attribute_value?.value).join(", ") || null;
 
         return {
           id: item.id,
@@ -172,13 +175,20 @@ export const getSellerOrders = async (req, res) => {
       res,
       "Seller orders fetched successfully",
       formattedOrders,
-      { totalRecords: count }
+      {
+        totalOrders: count,
+        currentPage: page,
+        totalPages: Math.ceil(count / limit),
+        pageSize: limit,
+      }
     );
   } catch (error) {
     console.error("Error fetching seller orders:", error);
     return apiResponse.ErrorResponse(res, error.message);
   }
 };
+
+
 
 export const getSellerOrderById = async (req, res) => {
   try {
@@ -317,7 +327,7 @@ export const updateOrderStatus = async (req, res) => {
     if (!orderId) return apiResponse.ErrorResponse(res, "Order ID is required");
     if (!status) return apiResponse.ErrorResponse(res, "Status is required");
 
-    const allowedStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+    const allowedStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled","return_completed","return_requested"];
     if (!allowedStatuses.includes(status)) {
       return apiResponse.ErrorResponse(res, "Invalid status value");
     }

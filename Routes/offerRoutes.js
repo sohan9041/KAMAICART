@@ -19,7 +19,6 @@ const upload = multer({ storage });
 // Routes
 router.post("/", cookiesVerifyUser, upload.single("image"), createOffer);
 router.get("/", cookiesVerifyUser, getOfferList);
-router.get("/web",  getOfferListForWeb);
 
 router.delete("/:id", cookiesVerifyUser, deleteOffer);
 

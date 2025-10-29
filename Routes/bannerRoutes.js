@@ -18,7 +18,6 @@ const upload = multer({ storage });
 // Routes
 router.post("/",cookiesVerifyUser, upload.single("image"), createBanner);
 router.get("/",cookiesVerifyUser, getBannerList);
-router.get("/web", (req, res) => getBannerByType({ ...req, params: { type: "web" } }, res));
 router.get("/app", (req, res) => getBannerByTypeapp({ ...req, params: { type: "app" } }, res));
 router.delete("/:id",cookiesVerifyUser, deleteBanner);
 

@@ -13,7 +13,6 @@ const router = express.Router();
 
 
 router.get("/",cookiesVerifyUser, getWhyChooseList);
-router.get("/get", getWhyChooseListForWeb);
 router.post("/",cookiesVerifyUser,uploadIcon.single("icon"), createOrUpdateWhyChoose);
 router.put("/:id",cookiesVerifyUser, createOrUpdateWhyChoose); // update same as createOrUpdate
 router.delete("/:id",cookiesVerifyUser, deleteWhyChoose);

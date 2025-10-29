@@ -13,7 +13,6 @@ const router = express.Router();
 // -----------------------
 // Public Routes
 // -----------------------
-router.get("/web", getCancelReasonList);
 
 // -----------------------
 // Protected Routes
