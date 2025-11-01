@@ -470,6 +470,100 @@ export const appupdateCartQuantity = async (req, res) => {
   }
 };
 
+// export const buyNowAddToCart = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const {
+//       product_id,
+//       variant_id = null,
+//       quantity = 1,
+//       address_id,
+//       payment_id,
+//       razorpay_payment_id = null,
+//     } = req.body;
+
+//     // ✅ Validate required fields
+//     if (!product_id) return apiResponse.ErrorResponse(res, "Product ID is required");
+//     if (!address_id) return apiResponse.ErrorResponse(res, "Address ID is required");
+//     if (!payment_id) return apiResponse.ErrorResponse(res, "Payment type is required");
+
+//     // ✅ Fetch product with shop_id (seller reference)
+//     const product = await Product.findByPk(product_id, {
+//       attributes: ["id", "title", "price", "shop_id"],
+//     });
+
+//     if (!product) return apiResponse.ErrorResponse(res, "Product not found");
+
+//     // ✅ Determine variant and price
+//     let selectedVariant = null;
+//     let sellingPrice = 0;
+
+//     if (variant_id) {
+//       selectedVariant = await ProductVariant.findOne({
+//         where: { id: variant_id, product_id },
+//       });
+
+//       if (!selectedVariant) {
+//         return apiResponse.ErrorResponse(res, "Invalid variant selected");
+//       }
+
+//       sellingPrice = selectedVariant.selling_price;
+//     } else {
+//       // No variant selected → use first variant or base product price
+//       selectedVariant = await ProductVariant.findOne({
+//         where: { product_id },
+//         order: [["id", "ASC"]],
+//       });
+
+//       sellingPrice = selectedVariant
+//         ? selectedVariant.selling_price
+//         : product.price;
+//     }
+
+//     // ✅ Calculate total amount
+//     const totalAmount = sellingPrice * quantity;
+
+//     // ✅ Create order (include seller_id from product.shop_id)
+//     const order = await Order.create({
+//       user_id: userId,
+//       seller_id: product.shop_id, // 👈 added seller reference
+//       address_id,
+//       payment_id,
+//       total_amount: totalAmount,
+//       razorpay_payment_id: razorpay_payment_id,
+//       status: "pending",
+//       is_buy_now: true,
+//     });
+
+//     // ✅ Create order item
+//     await OrderItem.create({
+//       order_id: order.id,
+//       product_id,
+//       variant_id: variant_id || (selectedVariant ? selectedVariant.id : null),
+//       quantity,
+//       price: sellingPrice,
+//     });
+
+//     // ✅ Return success response
+//     return apiResponse.successResponseWithData(
+//       res,
+//       "Buy now order placed successfully",
+//       {
+//         order,
+//         item: {
+//           product_id,
+//           variant_id,
+//           quantity,
+//           price: sellingPrice,
+//         },
+//       }
+//     );
+//   } catch (error) {
+//     console.error("Error in buyNowAddToCart:", error);
+//     return apiResponse.ErrorResponse(res, error.message);
+//   }
+// };
+
 export const buyNowAddToCart = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -482,14 +576,22 @@ export const buyNowAddToCart = async (req, res) => {
       razorpay_payment_id = null,
     } = req.body;
 
-    // ✅ Validate required fields
     if (!product_id) return apiResponse.ErrorResponse(res, "Product ID is required");
     if (!address_id) return apiResponse.ErrorResponse(res, "Address ID is required");
     if (!payment_id) return apiResponse.ErrorResponse(res, "Payment type is required");
 
     // ✅ Fetch product with shop_id (seller reference)
     const product = await Product.findByPk(product_id, {
-      attributes: ["id", "title", "price", "shop_id"],
+      attributes: ["id", "title", "price", "shop_id", "name", "short_description"],
+      include: [
+        {
+          model: ProductImage,
+          as: "images",
+          where: { is_deleted: false },
+          required: false,
+          attributes: ["id", "image_url", "is_primary"],
+        },
+      ],
     });
 
     if (!product) return apiResponse.ErrorResponse(res, "Product not found");
@@ -503,34 +605,50 @@ export const buyNowAddToCart = async (req, res) => {
         where: { id: variant_id, product_id },
       });
 
-      if (!selectedVariant) {
+      if (!selectedVariant)
         return apiResponse.ErrorResponse(res, "Invalid variant selected");
-      }
 
-      sellingPrice = selectedVariant.selling_price;
+      sellingPrice = parseFloat(selectedVariant.selling_price);
     } else {
-      // No variant selected → use first variant or base product price
       selectedVariant = await ProductVariant.findOne({
         where: { product_id },
         order: [["id", "ASC"]],
       });
 
       sellingPrice = selectedVariant
-        ? selectedVariant.selling_price
-        : product.price;
+        ? parseFloat(selectedVariant.selling_price)
+        : parseFloat(product.price);
     }
 
-    // ✅ Calculate total amount
-    const totalAmount = sellingPrice * quantity;
+    // ✅ Calculate totals
+    const subtotal = sellingPrice * quantity;
+    const tax = parseFloat((subtotal * 0.1).toFixed(2)); // 10% tax
+    const shipping = 0;
+    const totalAmount = parseFloat((subtotal + tax + shipping).toFixed(2));
 
-    // ✅ Create order (include seller_id from product.shop_id)
+    // ✅ Get address and payment method
+    const address = await userAddress.findOne({
+      where: { id: address_id, user_id: userId },
+    });
+    if (!address) return apiResponse.ErrorResponse(res, "Address not found");
+
+    const paymentMethod = await PaymentMethod.findOne({
+      where: { id: payment_id },
+    });
+    if (!paymentMethod)
+      return apiResponse.ErrorResponse(res, "Payment method not found");
+
+    // ✅ Create order
     const order = await Order.create({
       user_id: userId,
-      seller_id: product.shop_id, // 👈 added seller reference
+      seller_id: product.shop_id,
       address_id,
       payment_id,
       total_amount: totalAmount,
-      razorpay_payment_id: razorpay_payment_id,
+      subtotal,
+      tax,
+      shipping,
+      razorpay_payment_id,
       status: "pending",
       is_buy_now: true,
     });
@@ -544,25 +662,58 @@ export const buyNowAddToCart = async (req, res) => {
       price: sellingPrice,
     });
 
-    // ✅ Return success response
+    // 📅 Estimated delivery
+    const estimatedDelivery = new Date();
+    estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+    const formattedDelivery = estimatedDelivery.toISOString().split("T")[0];
+
+    // 🖼 Image
+    const image =
+      product.images?.find((img) => img.is_primary)?.image_url ||
+      product.images?.[0]?.image_url ||
+      null;
+
+    // ✅ Construct response same as placeOrder
+    const responseData = {
+      address,
+      paymentMethod,
+      subtotal,
+      tax,
+      shipping,
+      totalAmount,
+      orders: [
+        {
+          orderId: `ORD${order.id}`,
+          sellerId: product.shop_id,
+          subtotal,
+          tax,
+          shipping,
+          totalAmount,
+          estimatedDelivery: formattedDelivery,
+          items: [
+            {
+              id: product.id,
+              name: product.name || product.title,
+              image,
+              quantity,
+              sellingPrice: sellingPrice.toFixed(2),
+            },
+          ],
+        },
+      ],
+    };
+
     return apiResponse.successResponseWithData(
       res,
       "Buy now order placed successfully",
-      {
-        order,
-        item: {
-          product_id,
-          variant_id,
-          quantity,
-          price: sellingPrice,
-        },
-      }
+      responseData
     );
   } catch (error) {
     console.error("Error in buyNowAddToCart:", error);
     return apiResponse.ErrorResponse(res, error.message);
   }
 };
+
 
 export const appbuyNowAddToCart = async (req, res) => {
   try {
