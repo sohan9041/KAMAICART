@@ -693,7 +693,7 @@ export const buyNowAddToCart = async (req, res) => {
           items: [
             {
               id: product.id,
-              name: product.name || product.title,
+              name: product.name,
               image,
               quantity,
               sellingPrice: sellingPrice.toFixed(2),
