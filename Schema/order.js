@@ -40,8 +40,8 @@ const Order = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
-    promo_code: {
-      type: DataTypes.STRING,
+    promo_code_id: {
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
     status: {

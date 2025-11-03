@@ -416,7 +416,7 @@ export const appBuyNowCheckout = async (req, res) => {
 export const placeOrder = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { address_id, payment_id, razorpay_payment_id = null } = req.body;
+    const { address_id, payment_id, promo_code_id = null, razorpay_payment_id = null } = req.body;
 
     if (!address_id) return apiResponse.ErrorResponse(res, "Address ID is required");
     if (!payment_id) return apiResponse.ErrorResponse(res, "Payment ID is required");
@@ -424,7 +424,7 @@ export const placeOrder = async (req, res) => {
     const paymentMethod = await PaymentMethod.findOne({ where: { id: payment_id } });
     if (!paymentMethod) return apiResponse.notFoundResponse(res, "Payment method not found");
 
-    // 🛒 Fetch cart items
+    // ✅ Fetch Cart Items
     const cartItems = await Cart.findAll({
       where: { user_id: userId },
       include: [
@@ -432,14 +432,14 @@ export const placeOrder = async (req, res) => {
           model: Product,
           as: "product",
           where: { is_deleted: false },
-          attributes: ["id", "name", "short_description", "category_id", "shop_id"],
+          attributes: ["id", "name", "category_id", "shop_id"],
           include: [
             {
               model: ProductImage,
               as: "images",
               where: { is_deleted: false },
               required: false,
-              attributes: ["id", "image_url", "is_primary"],
+              attributes: ["image_url", "is_primary"]
             },
           ],
         },
@@ -453,7 +453,61 @@ export const placeOrder = async (req, res) => {
     });
     if (!address) return apiResponse.ErrorResponse(res, "Address not found");
 
-    // 🧩 Group items by seller/shop_id
+    // ✅ Calculate full cart total before splitting
+    let grandSubtotal = 0;
+    for (const item of cartItems) {
+      const variant = await ProductVariant.findOne({
+        where: { product_id: item.product_id, is_deleted: false },
+        order: [["id", "ASC"]],
+      });
+      const price = variant ? variant.selling_price : 0;
+      grandSubtotal += price * item.quantity;
+    }
+
+    const grandTax = parseFloat((grandSubtotal * 0.10).toFixed(2));
+    const grandShipping = 0;
+    let grandTotal = grandSubtotal + grandTax + grandShipping;
+
+    // ✅ Promo Code Apply Logic
+    let discountAmount = 0;
+    let appliedPromo = null;
+
+    if (promo_code_id) {
+      const promo = await PromoCode.findOne({
+        where: { id: promo_code_id, is_active: true, is_deleted: false }
+      });
+
+      if (!promo) return apiResponse.ErrorResponse(res, "Invalid or inactive promo code");
+
+      const now = new Date();
+      if (promo.valid_from && now < promo.valid_from)
+        return apiResponse.ErrorResponse(res, "Promo not active yet");
+      if (promo.valid_to && now > promo.valid_to)
+        return apiResponse.ErrorResponse(res, "Promo expired");
+      if (promo.usage_limit > 0 && promo.used_count >= promo.usage_limit)
+        return apiResponse.ErrorResponse(res, "Promo usage limit reached");
+      if (promo.min_order_value && grandTotal < promo.min_order_value)
+        return apiResponse.ErrorResponse(res, `Minimum order value ₹${promo.min_order_value} required`);
+
+      if (promo.discount_type === "fixed") {
+        discountAmount = promo.discount_value;
+      } else if (promo.discount_type === "percent") {
+        discountAmount = (promo.discount_value / 100) * grandTotal;
+        if (promo.max_discount && discountAmount > promo.max_discount) {
+          discountAmount = promo.max_discount;
+        }
+      }
+
+      if (discountAmount > grandTotal) discountAmount = grandTotal;
+      appliedPromo = promo;
+      grandTotal = grandTotal - discountAmount;
+    }
+
+     const estimatedDelivery = new Date();
+      estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+      const formattedDelivery = estimatedDelivery.toISOString().split("T")[0];
+
+    // ✅ Group by Seller
     const groupedBySeller = {};
     for (const item of cartItems) {
       const shopId = item.product.shop_id;
@@ -461,116 +515,103 @@ export const placeOrder = async (req, res) => {
       groupedBySeller[shopId].push(item);
     }
 
-    // 📦 Create separate orders but merge totals for response
     const allOrders = [];
-    let grandSubtotal = 0;
-    let grandTax = 0;
-    let grandShipping = 0;
-    let grandTotal = 0;
 
+    // 🏷️ Loop seller-wise and place orders
     for (const [sellerId, itemsList] of Object.entries(groupedBySeller)) {
-      let subtotal = 0;
-      const orderItemsData = [];
-      const orderItemsToSave = [];
+      let sellerSubtotal = 0;
+      let orderItems = [];
 
       for (const item of itemsList) {
-        // ✅ Variant per item
         const variant = await ProductVariant.findOne({
           where: { product_id: item.product_id, is_deleted: false },
           order: [["id", "ASC"]],
         });
 
         const price = variant ? variant.selling_price : 0;
-        subtotal += price * item.quantity;
+        sellerSubtotal += price * item.quantity;
 
         const image =
-          item.product.images?.find((img) => img.is_primary)?.image_url ||
+          item.product.images?.find(x => x.is_primary)?.image_url ||
           item.product.images?.[0]?.image_url ||
           null;
 
-        orderItemsData.push({
+        orderItems.push({
           id: item.product.id,
           name: item.product.name,
           image,
           quantity: item.quantity,
           sellingPrice: price,
         });
-
-        // ✅ Prepare OrderItem for DB
-        orderItemsToSave.push({
-          product_id: item.product_id,
-          variant_id: variant ? variant.id : null,
-          quantity: item.quantity,
-          price,
-        });
       }
 
-      const tax = parseFloat((subtotal * 0.1).toFixed(2));
+      const tax = parseFloat((sellerSubtotal * 0.1).toFixed(2));
       const shipping = 0;
-      const totalAmount = parseFloat((subtotal + tax + shipping).toFixed(2));
+      const sellerTotal = parseFloat((sellerSubtotal + tax + shipping).toFixed(2));
 
-      // Accumulate totals for final response
-      grandSubtotal += subtotal;
-      grandTax += tax;
-      grandShipping += shipping;
-      grandTotal += totalAmount;
-
-      // 🧾 Create order per seller
+      // ✅ Create Order Row
       const order = await Order.create({
         user_id: userId,
         seller_id: sellerId,
         address_id,
         payment_id,
         razorpay_payment_id,
-        subtotal,
+        subtotal: sellerSubtotal,
         tax,
         shipping,
-        total_amount: totalAmount,
+        total_amount: sellerTotal,
+        promo_code_id: appliedPromo ? appliedPromo.id : null, // ✅ save promo here too
         status: "pending",
       });
 
-      // 🧾 Add order items to DB (now variant is defined)
-      const finalItems = orderItemsToSave.map((oi) => ({
-        ...oi,
-        order_id: order.id,
-      }));
-      await OrderItem.bulkCreate(finalItems);
+      // ✅ Insert Order Items
+      for (const item of itemsList) {
+        const variant = await ProductVariant.findOne({
+          where: { product_id: item.product_id, is_deleted: false },
+          order: [["id", "ASC"]],
+        });
 
-      // 📅 Estimated Delivery (+7 days)
-      const estimatedDelivery = new Date();
-      estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
-      const formattedDelivery = estimatedDelivery.toISOString().split("T")[0];
+        await OrderItem.create({
+          order_id: order.id,
+          product_id: item.product_id,
+          variant_id: variant ? variant.id : null,
+          quantity: item.quantity,
+          price: variant ? variant.selling_price : 0,
+        });
+      }
 
       allOrders.push({
         orderId: `ORD${order.id}`,
         sellerId,
-        subtotal,
+        subtotal: sellerSubtotal,
         tax,
         shipping,
-        totalAmount,
+        totalAmount: sellerTotal,
         estimatedDelivery: formattedDelivery,
-        items: orderItemsData,
+        items: orderItems,
       });
     }
 
-    // 🧹 Clear cart
     await Cart.destroy({ where: { user_id: userId } });
 
-    // ✅ Combined Response (address & totals only once)
-    return apiResponse.successResponseWithData(res, "Orders placed successfully", {
+    return apiResponse.successResponseWithData(res, "Order placed successfully", {
       address,
       paymentMethod,
       subtotal: grandSubtotal,
       tax: grandTax,
       shipping: grandShipping,
+      discount: discountAmount,
       totalAmount: grandTotal,
-      orders: allOrders, // seller-wise list
+      promo_code: appliedPromo ? appliedPromo.code : null,
+      orders: allOrders,
     });
+
   } catch (err) {
     console.error(err);
     return apiResponse.ErrorResponse(res, err.message);
   }
 };
+
 
 
 // ============================

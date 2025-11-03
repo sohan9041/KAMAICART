@@ -12,6 +12,8 @@ import Order from "../Schema/order.js";
 import OrderItem from "../Schema/orderItem.js";
 import { PromoCode } from "../Models/promoCode.js";
 import { SortOption } from "../Models/sortOption.js";
+import { userAddress } from "../Models/userAddressModel.js";
+import PaymentMethod from "../Schema/paymentMethod.js";
 
 
 // Add to cart
@@ -482,90 +484,181 @@ export const buyNowAddToCart = async (req, res) => {
       quantity = 1,
       address_id,
       payment_id,
+      promo_code_id = null,
       razorpay_payment_id = null,
     } = req.body;
 
-    // ✅ Validate required fields
     if (!product_id) return apiResponse.ErrorResponse(res, "Product ID is required");
     if (!address_id) return apiResponse.ErrorResponse(res, "Address ID is required");
     if (!payment_id) return apiResponse.ErrorResponse(res, "Payment type is required");
 
-    // ✅ Fetch product with shop_id (seller reference)
+    // ✅ Fetch product with images + variants
     const product = await Product.findByPk(product_id, {
       attributes: ["id", "name", "shop_id"],
+      include: [
+        {
+          model: ProductImage,
+          as: "images",
+          where: { is_deleted: false },
+          required: false,
+          attributes: ["image_url", "is_primary"],
+        },
+        {
+          model: ProductVariant,
+          as: "variants",
+          where: { is_deleted: false },
+          required: false,
+          attributes: ["id", "selling_price"],
+          include: [
+            {
+              model: ProductImage,
+              as: "variant_images",
+              where: { is_deleted: false },
+              required: false,
+              attributes: ["image_url", "is_primary"],
+            }
+          ]
+        }
+      ]
     });
 
     if (!product) return apiResponse.ErrorResponse(res, "Product not found");
 
-    // ✅ Determine variant and price
-    let selectedVariant = null;
-    let sellingPrice = 0;
+    // ✅ Variant selection logic
+    let selectedVariant = variant_id
+      ? product.variants?.find(v => v.id == variant_id)
+      : (product.variants?.[0] || null);
 
-    if (variant_id) {
-      selectedVariant = await ProductVariant.findOne({
-        where: { id: variant_id, product_id },
+    if (variant_id && !selectedVariant)
+      return apiResponse.ErrorResponse(res, "Invalid variant selected");
+
+    const sellingPrice = selectedVariant ? selectedVariant.selling_price : 1;
+
+    let subtotal = sellingPrice * quantity;
+    let tax = subtotal * 0.10;
+    let shipping = 0;
+    let totalBeforeDiscount = subtotal + tax + shipping;
+
+    // ✅ Apply Promo Code logic (same as checkout)
+    let discountAmount = 0;
+    let appliedPromo = null;
+
+    if (promo_code_id) {
+      const promo = await PromoCode.findOne({
+        where: { id: promo_code_id, is_active: true, is_deleted: false }
       });
 
-      if (!selectedVariant) {
-        return apiResponse.ErrorResponse(res, "Invalid variant selected");
+      if (!promo)
+        return apiResponse.ErrorResponse(res, "Invalid or inactive promo code");
+
+      const now = new Date();
+      if (promo.valid_from && now < promo.valid_from)
+        return apiResponse.ErrorResponse(res, "Promo code not yet active");
+      if (promo.valid_to && now > promo.valid_to)
+        return apiResponse.ErrorResponse(res, "Promo code expired");
+      if (promo.usage_limit > 0 && promo.used_count >= promo.usage_limit)
+        return apiResponse.ErrorResponse(res, "Promo usage limit reached");
+      if (promo.min_order_value && totalBeforeDiscount < promo.min_order_value)
+        return apiResponse.ErrorResponse(
+          res, `Minimum order value should be ₹${promo.min_order_value}`
+        );
+
+      if (promo.discount_type === "fixed") {
+        discountAmount = promo.discount_value;
+      } else if (promo.discount_type === "percent") {
+        discountAmount = (promo.discount_value / 100) * totalBeforeDiscount;
+        if (promo.max_discount && discountAmount > promo.max_discount)
+          discountAmount = promo.max_discount;
       }
 
-      sellingPrice = selectedVariant.selling_price;
-    } else {
-      // No variant selected → use first variant or base product price
-      selectedVariant = await ProductVariant.findOne({
-        where: { product_id },
-        order: [["id", "ASC"]],
-      });
-
-      sellingPrice = selectedVariant
-        ? selectedVariant.selling_price
-        : 1;
+      if (discountAmount > totalBeforeDiscount) discountAmount = totalBeforeDiscount;
+      appliedPromo = promo;
     }
 
-    // ✅ Calculate total amount
-    const totalAmount = sellingPrice * quantity;
+    const finalAmount = totalBeforeDiscount - discountAmount;
 
-    // ✅ Create order (include seller_id from product.shop_id)
+    // ✅ Get product/variant image
+    let imageUrl = null;
+
+    if (selectedVariant?.variant_images?.length) {
+      imageUrl =
+        selectedVariant.variant_images.find(img => img.is_primary)?.image_url ||
+        selectedVariant.variant_images[0].image_url;
+    } else if (product.images?.length) {
+      imageUrl =
+        product.images.find(img => img.is_primary)?.image_url ||
+        product.images[0].image_url;
+    }
+
+    // ✅ Create Order
     const order = await Order.create({
       user_id: userId,
-      seller_id: product.shop_id, // 👈 added seller reference
+      seller_id: product.shop_id,
       address_id,
       payment_id,
-      total_amount: totalAmount,
-      razorpay_payment_id: razorpay_payment_id,
+      total_amount: finalAmount,
+      promo_code_id: appliedPromo ? appliedPromo.id : null, // ✅ store promo id
+      razorpay_payment_id,
       status: "pending",
       is_buy_now: true,
     });
 
-    // ✅ Create order item
+    // ✅ Order Item
     await OrderItem.create({
       order_id: order.id,
       product_id,
-      variant_id: variant_id || (selectedVariant ? selectedVariant.id : null),
+      variant_id: selectedVariant ? selectedVariant.id : null,
       quantity,
       price: sellingPrice,
     });
 
-    // ✅ Return success response
-    return apiResponse.successResponseWithData(
-      res,
-      "Buy now order placed successfully",
-      {
-        order,
-        item: {
-          product_id,
-          variant_id,
-          quantity,
-          price: sellingPrice,
-        },
-      }
-    );
+    // ✅ Fetch Address & Payment Method
+    const address = await userAddress.findByPk(address_id);
+    const paymentMethod = await PaymentMethod.findByPk(payment_id);
+
+    // ✅ Final Response
+    const responseData = {
+      address,
+      paymentMethod,
+      subtotal,
+      tax,
+      shipping,
+      discountAmount,
+      totalBeforeDiscount,
+      totalAmount: finalAmount,
+      promo_code: appliedPromo ? appliedPromo.code : null,
+      orders: [
+        {
+          orderId: `ORD${order.id}`,
+          sellerId: product.shop_id.toString(),
+          subtotal,
+          tax,
+          shipping,
+          discountAmount,
+          totalAmount: finalAmount,
+          estimatedDelivery: new Date(Date.now() + 7 * 86400000)
+            .toISOString().split("T")[0],
+          items: [
+            {
+              id: product.id,
+              name: product.name,
+              image: imageUrl,
+              quantity,
+              sellingPrice
+            }
+          ]
+        }
+      ]
+    };
+
+    return apiResponse.successResponseWithData(res, "Order placed successfully", responseData);
+
   } catch (error) {
     console.error("Error in buyNowAddToCart:", error);
     return apiResponse.ErrorResponse(res, error.message);
   }
 };
+
 
 export const appbuyNowAddToCart = async (req, res) => {
   try {
