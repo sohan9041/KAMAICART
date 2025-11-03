@@ -10,7 +10,7 @@ import { userAddress } from "../Models/userAddressModel.js";
 import { ProductVariantAttributeValue } from "../Models/ProductVariantAttributeValueModel.js";
 import { Attribute } from "../Models/attributeModel.js";
 import { AttributeValue } from "../Models/attributeValueModel.js";
-import {ProductImage} from "../Models/productImageModel.js";
+import { ProductImage } from "../Models/productImageModel.js";
 import { PaymentMethod } from "../Models/paymentMethodModel.js";
 
 import { PromoCode } from "../Models/promoCode.js";
@@ -411,9 +411,6 @@ export const appBuyNowCheckout = async (req, res) => {
     return appapiResponse.ErrorResponse(res, error.message);
   }
 };
-
-
-
 
 // ============================
 export const placeOrder = async (req, res) => {

@@ -1,6 +1,6 @@
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import cloudinary from "../Helper/Cloudinary";
+import cloudinary from "../Helper/Cloudinary.js";
 
 import path from "path";
 import fs from "fs";
