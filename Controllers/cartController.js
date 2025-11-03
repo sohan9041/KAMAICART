@@ -667,7 +667,6 @@ export const appbuyNowAddToCart = async (req, res) => {
   }
 };
 
-
 export const checkout = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -1049,6 +1048,4 @@ export const getSortOptions = async (req, res) => {
     return appapiResponse.ErrorResponse(res, err.message);
   }
 };
-
-
 
