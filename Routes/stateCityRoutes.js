@@ -6,7 +6,8 @@ import {
   appbuyNowAddToCart,
   appgetCart,
   appremoveFromCart,
-  appupdateCartQuantity
+  appupdateCartQuantity,
+  getSortOptions
 } from "../Controllers/cartController.js";
 import { appplaceOrder, appgetOrderHistory, appgetOrderDetails,appcancelOrder,appreorder } from "../Controllers/orderController.js";
 
@@ -26,6 +27,5 @@ router.get("/order-details/:id", verifyUser, appgetOrderDetails);
 router.post("/cancel-order", verifyUser, appcancelOrder);
 router.post("/re-order", verifyUser, appreorder);
 router.post("/buyNow", verifyUser, appbuyNowAddToCart);
-
 
 export default router;

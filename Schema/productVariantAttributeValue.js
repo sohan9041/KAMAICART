@@ -33,5 +33,6 @@ const ProductVariantAttributeValue = sequelize.define("ProductVariantAttributeVa
 
 ProductVariantAttributeValue.belongsTo(Attribute, { foreignKey: "attribute_id", as: "attribute" });
 ProductVariantAttributeValue.belongsTo(AttributeValue, { foreignKey: "attribute_value_id", as: "attribute_value" });
+AttributeValue.hasMany(ProductVariantAttributeValue, { foreignKey: "attribute_value_id",as: "product_variant_values"});
 
 export default ProductVariantAttributeValue;

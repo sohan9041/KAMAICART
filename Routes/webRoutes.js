@@ -5,7 +5,7 @@ import { Logout, profile, RefreshToken, Signin, Signup, updateProfile, webforgot
 import { cookiesVerifyUser, optionalAuthCookie } from "../Middleware/verifyAuthMiddleware.js";
 import { WebAddAddress, WebDeleteAddress, WebGetAddressById, WebGetAddresses, WebUpdateAddress } from "../Controllers/userAddressController.js";
 import { getBannerByType } from "../Controllers/bannerController.js";
-import { addToCart, buyNowAddToCart, getCart, removeFromCart, updateCartQuantity } from "../Controllers/cartController.js";
+import { addToCart, buyNowAddToCart, buyNowCheckout, checkout, getCart, removeFromCart, updateCartQuantity } from "../Controllers/cartController.js";
 import { getMegaMenu } from "../Controllers/categoryController.js";
 import { getOfferListForWeb } from "../Controllers/offerController.js";
 import { cancelOrder, getOrderDetails, getOrderHistory, placeOrder, reorder } from "../Controllers/orderController.js";
@@ -53,7 +53,8 @@ router.get("/cart", cookiesVerifyUser, getCart);
 router.delete("/cart/:id", cookiesVerifyUser, removeFromCart);
 router.put("/cart/:id", cookiesVerifyUser, updateCartQuantity);
 router.post("/buyNow", cookiesVerifyUser, buyNowAddToCart);
-
+router.post("/checkout",cookiesVerifyUser, checkout);
+router.post("/buyNowCheckout",cookiesVerifyUser, buyNowCheckout);
 
 router.post("/orderplace", cookiesVerifyUser, placeOrder);
 router.get("/orderhistory", cookiesVerifyUser, getOrderHistory);
@@ -68,6 +69,7 @@ router.get("/whyChoose", getWhyChooseListForWeb);
 router.get("/cancelReason", getCancelReasonList);
 router.get("/brand", getBrandList);
 router.get("/promoCodes", getPromoCodes);
+
 
 router.post("/wishlist", cookiesVerifyUser, addToWishlistweb);
 router.get("/wishlist", cookiesVerifyUser, getWishlistweb);

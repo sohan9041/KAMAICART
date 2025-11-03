@@ -240,6 +240,179 @@ export const appCheckout = async (req, res) => {
   }
 };
 
+export const appBuyNowCheckout = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { product_id, variant_id = null, promo_code_id = null } = req.body;
+
+    if (!product_id)
+      return appapiResponse.ErrorResponse(res, "Product ID is required");
+
+    // ✅ Step 1: Fetch product + variant details
+    const product = await Product.findOne({
+      where: { id: product_id, is_deleted: false },
+      attributes: ["id", "name", "short_description", "category_id", "product_type"],
+      include: [
+        {
+          model: ProductImage,
+          as: "images",
+          where: { is_deleted: false },
+          required: false,
+          attributes: ["id", "image_url", "is_primary"],
+        },
+        {
+          model: ProductVariant,
+          as: "variants",
+          where: { is_deleted: false },
+          required: false,
+          attributes: ["id", "sku", "price", "selling_price", "shipping_cost", "stock"],
+          include: [
+            {
+              model: ProductImage,
+              as: "variant_images",
+              where: { is_deleted: false },
+              required: false,
+              attributes: ["id", "image_url", "is_primary"],
+            },
+            {
+              model: ProductVariantAttributeValue,
+              as: "attributes",
+              include: [
+                { model: Attribute, as: "attribute", attributes: ["id", "name"] },
+                { model: AttributeValue, as: "attribute_value", attributes: ["id", "value"] },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!product)
+      return appapiResponse.ErrorResponse(res, "Product not found");
+
+    // ✅ Step 2: Choose variant (if applicable)
+    let variant = null;
+    if (variant_id) {
+      variant = product.variants.find(v => v.id === variant_id);
+      if (!variant)
+        return appapiResponse.ErrorResponse(res, "Invalid product variant");
+    } else if (product.variants.length > 0) {
+      variant = product.variants[0]; // default variant
+    }
+
+    const images = variant?.variant_images?.length
+      ? variant.variant_images
+      : product.images || [];
+
+    const price = parseFloat(variant?.selling_price ?? variant?.price ?? 0);
+    const originalPrice = parseFloat(variant?.price ?? variant?.selling_price ?? 0);
+    const discount =
+      originalPrice > 0
+        ? Math.round(((originalPrice - price) / originalPrice) * 100)
+        : 0;
+
+    // ✅ Step 3: Calculate totals (quantity fixed to 1 for Buy Now)
+    const quantity = 1;
+    let totalAmount = price * quantity;
+
+    // ✅ Step 4: Apply promo code (optional)
+    let discountAmount = 0;
+    let appliedPromo = null;
+
+    if (promo_code_id) {
+      const promo = await PromoCode.findOne({
+        where: { id: promo_code_id, is_active: true, is_deleted: false },
+      });
+
+      if (!promo)
+        return appapiResponse.ErrorResponse(res, "Invalid or inactive promo code");
+
+      const now = new Date();
+      if (promo.valid_from && now < promo.valid_from)
+        return appapiResponse.ErrorResponse(res, "Promo code not yet active");
+      if (promo.valid_to && now > promo.valid_to)
+        return appapiResponse.ErrorResponse(res, "Promo code has expired");
+      if (promo.usage_limit > 0 && promo.used_count >= promo.usage_limit)
+        return appapiResponse.ErrorResponse(res, "Promo code usage limit reached");
+      if (promo.min_order_value && totalAmount < promo.min_order_value)
+        return appapiResponse.ErrorResponse(
+          res,
+          `Minimum order value should be ₹${promo.min_order_value}`
+        );
+
+      if (promo.discount_type === "fixed") {
+        discountAmount = promo.discount_value;
+      } else if (promo.discount_type === "percent") {
+        discountAmount = (promo.discount_value / 100) * totalAmount;
+        if (promo.max_discount && discountAmount > promo.max_discount)
+          discountAmount = promo.max_discount;
+      }
+
+      if (discountAmount > totalAmount) discountAmount = totalAmount;
+      appliedPromo = promo;
+    }
+
+    const finalAmount = totalAmount - discountAmount;
+
+    // ✅ Step 5: Prepare response data
+    const responseData = {
+      // product: {
+      //   id: product.id,
+      //   name: product.name,
+      //   description: product.short_description || "",
+      //   price: parseFloat(originalPrice.toFixed(2)),
+      //   selling_price: parseFloat(price.toFixed(2)),
+      //   discount,
+      //   image:
+      //     images.find((img) => img.is_primary)?.image_url ||
+      //     images[0]?.image_url ||
+      //     null,
+      //   category: product.category_id || null,
+      //   stockStatus: (variant?.stock || 0) > 0 ? "in" : "out",
+      //   onSale: discount > 0,
+      //   quantity,
+      //   ...(variant && {
+      //     variant: {
+      //       id: variant.id,
+      //       sku: variant.sku,
+      //       stock: variant.stock,
+      //       attributes:
+      //         variant.attributes?.map((attr) => ({
+      //           attribute_id: attr.attribute?.id,
+      //           attribute_name: attr.attribute?.name,
+      //           value_id: attr.attribute_value?.id,
+      //           value: attr.attribute_value?.value,
+      //         })) || [],
+      //       images:
+      //         variant.variant_images?.map((img) => ({
+      //           id: img.id,
+      //           url: img.image_url,
+      //           is_primary: img.is_primary,
+      //         })) || [],
+      //     },
+      //   }),
+      // },
+      total_amount: totalAmount,
+      discount_amount: discountAmount,
+      final_amount: finalAmount,
+      promo_code_id: appliedPromo ? appliedPromo.id : null,
+      promo_code: appliedPromo ? appliedPromo.code : null,
+      discount_type: appliedPromo ? appliedPromo.discount_type : null,
+      discount_value: appliedPromo ? appliedPromo.discount_value : null,
+    };
+
+    return appapiResponse.successResponseWithData(
+      res,
+      "Buy Now checkout calculation successful",
+      responseData
+    );
+  } catch (error) {
+    console.error("Error in appBuyNowCheckout:", error);
+    return appapiResponse.ErrorResponse(res, error.message);
+  }
+};
+
+
 
 
 // ============================

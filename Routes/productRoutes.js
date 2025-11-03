@@ -8,6 +8,7 @@ import {
   deleteProductById,
   getAppProductList,
   removeAttributeInProduct,
+  getAppProductFilter,
   getRandomProducts,
   getTopRatedProducts,
   getWebAllProducts,
@@ -27,18 +28,18 @@ import {
 
 import { optionalAuthHeader,verifyUser,cookiesVerifyUser,optionalAuthCookie } from "../Middleware/verifyAuthMiddleware.js";
 import { uploadProductImages } from "../Middleware/imageUploadMiddleware.js";
-import { appbuyNowAddToCart, buyNowAddToCart } from "../Controllers/cartController.js";
+import { appbuyNowAddToCart, buyNowAddToCart, getSortOptions } from "../Controllers/cartController.js";
 
 const router = express.Router();
 
 router.post("/home-list",optionalAuthHeader, getAppProductList);
+router.post("/filter",getAppProductFilter);
+router.get("/sort-option", getSortOptions);
+
 
 router.post("/wishlist", verifyUser, addToWishlist);
 router.get("/wishlist", verifyUser, getWishlist);
 router.delete("/wishlist/:id", verifyUser, removeFromWishlist);
-
-
-
 
 // Product Routes
 router.post("/removeAttributeInProduct", cookiesVerifyUser, removeAttributeInProduct);

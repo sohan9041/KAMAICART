@@ -4,7 +4,7 @@ import Category from "./category.js";
 
 const Attribute = sequelize.define("Attribute", {
   id: {
-    type: DataTypes.BIGINT,
+    type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },

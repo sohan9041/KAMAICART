@@ -9,13 +9,13 @@ import {
 //   applyPromoCode,
 } from "../Controllers/promoCodeController.js";
 import { cookiesVerifyUser, verifyUser } from "../Middleware/verifyAuthMiddleware.js";
-import { appCheckout } from "../Controllers/orderController.js";
+import { appBuyNowCheckout, appCheckout } from "../Controllers/orderController.js";
 
 const router = express.Router();
 
 router.get("/app",verifyUser, getAppPromoCodes);
 router.post("/appCheckout",verifyUser, appCheckout);
-
+router.post("/appBuyNowCheckout",verifyUser, appBuyNowCheckout);
 // Admin CRUD
 router.post("/",cookiesVerifyUser, createPromoCode);
 router.get("/",cookiesVerifyUser, getAllPromoCodes);

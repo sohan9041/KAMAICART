@@ -10,6 +10,8 @@ import { ProductVariant } from "../Models/productVariantModel.js";
 import { ProductVariantAttributeValue } from "../Models/ProductVariantAttributeValueModel.js";
 import { ProductImage } from "../Models/productImageModel.js";
 import { Attribute } from "../Models/attributeModel.js";
+import { SortOption } from "../Models/sortOption.js";
+
 import { AttributeValue } from "../Models/attributeValueModel.js";
 import { Wishlist } from "../Models/wishlistModel.js";
 import { Category } from "../Models/cateogryModel.js";
@@ -651,19 +653,36 @@ export const getAppProductList = async (req, res) => {
     const limit = parseInt(req.body.limit) || 10;
     const offset = (page - 1) * limit;
 
-    const { maincategory_id, subcategory_id, childcategory_id, search } = req.body;
+    const { maincategory_id, subcategory_id, childcategory_id, search, sort_by, attribute_value_id } = req.body;
 
     const whereCondition = { is_deleted: false };
 
-    if (maincategory_id) whereCondition.maincategory_id = maincategory_id;
+    // ✅ Category Filters
+    if (maincategory_id) {
+      whereCondition.maincategory_id = Array.isArray(maincategory_id)
+        ? { [Op.in]: maincategory_id }
+        : maincategory_id;
+    }
     if (subcategory_id) whereCondition.subcategory_id = subcategory_id;
     if (childcategory_id) whereCondition.category_id = childcategory_id;
 
+    // ✅ Search
     if (search && search.trim() !== "") {
-      whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
+      whereCondition[Op.or] = [
+        { name: { [Op.like]: `%${search}%` } }
+      ];
     }
 
-    // ✅ Get wishlist product IDs
+    // ✅ Sorting
+    let sortOrder = [["id", "ASC"]];
+    switch (sort_by) {
+      case 2: sortOrder = [["id", "DESC"]]; break;
+      case 3: sortOrder = [[{ model: ProductVariant, as: "variants" }, "selling_price", "DESC"]]; break;
+      case 4: sortOrder = [[{ model: ProductVariant, as: "variants" }, "selling_price", "ASC"]]; break;
+      default: sortOrder = [["id", "ASC"]];
+    }
+
+    // ✅ Wishlist
     let wishlistProductIds = [];
     if (userId) {
       const wishlistItems = await Wishlist.findAll({
@@ -673,7 +692,34 @@ export const getAppProductList = async (req, res) => {
       wishlistProductIds = wishlistItems.map((w) => w.product_id);
     }
 
-    // ✅ Fetch products
+    // ✅ Attribute Filter → Fetch matching product IDs first
+    let filteredProductIds = null;
+    if (attribute_value_id) {
+      const filterIds = Array.isArray(attribute_value_id)
+        ? attribute_value_id
+        : [attribute_value_id];
+
+      const variantMatches = await ProductVariantAttributeValue.findAll({
+        where: {
+          attribute_value_id: { [Op.in]: filterIds },
+        },
+        attributes: ["product_id"],
+        group: ["product_id"],
+      });
+
+      filteredProductIds = variantMatches.map(v => v.product_id);
+
+      // ❌ If no match, return empty []
+      if (filteredProductIds.length === 0) {
+        return appapiResponse.successResponseWithData(res, "No matching products", [], {
+          total: 0, page, limit, totalPages: 0
+        });
+      }
+
+      whereCondition.id = { [Op.in]: filteredProductIds };
+    }
+
+    // ✅ Main product query
     const { count, rows: products } = await Product.findAndCountAll({
       where: whereCondition,
       attributes: [
@@ -683,7 +729,7 @@ export const getAppProductList = async (req, res) => {
         "product_type",
         "maincategory_id",
         "subcategory_id",
-        "category_id",
+        "category_id"
       ],
       include: [
         {
@@ -698,30 +744,18 @@ export const getAppProductList = async (req, res) => {
           as: "variants",
           where: { is_deleted: false },
           required: false,
-          attributes: [
-            "id",
-            "sku",
-            "price",
-            "stock",
-            "is_default",
-            "shipping_cost",
-            "selling_price",
-          ],
+          attributes: ["id", "sku", "price", "stock", "is_default", "shipping_cost", "selling_price"],
           include: [
             {
               model: ProductVariantAttributeValue,
               as: "attributes",
+              required: false,
+              where: attribute_value_id
+                ? { attribute_value_id: { [Op.in]: Array.isArray(attribute_value_id) ? attribute_value_id : [attribute_value_id] } }
+                : undefined,
               include: [
-                {
-                  model: Attribute,
-                  as: "attribute",
-                  attributes: ["id", "name", "input_type"],
-                },
-                {
-                  model: AttributeValue,
-                  as: "attribute_value",
-                  attributes: ["id", "value"],
-                },
+                { model: Attribute, as: "attribute", attributes: ["id", "name", "input_type"] },
+                { model: AttributeValue, as: "attribute_value", attributes: ["id", "value"] },
               ],
             },
             {
@@ -732,16 +766,15 @@ export const getAppProductList = async (req, res) => {
               attributes: ["id", "image_url", "is_primary"],
             },
           ],
-          order: [["id", "ASC"]], // ✅ Order variants ascending
         },
       ],
       limit,
       offset,
       distinct: true,
-      order: [["id", "ASC"]], // ✅ Order products ascending
+      order: sortOrder,
     });
 
-    // ✅ Format output with discount
+    // ✅ Format output
     const formattedProducts = products.map((p) => ({
       id: p.id,
       name: p.name,
@@ -750,44 +783,37 @@ export const getAppProductList = async (req, res) => {
       maincategory_id: p.maincategory_id,
       subcategory_id: p.subcategory_id,
       childcategory_id: p.category_id,
+      avg_rating: p.avg_rating || 0,
       is_wishlist: userId ? wishlistProductIds.includes(p.id) : false,
       thumbnail:
         p.images.find((img) => img.is_primary)?.image_url ||
         p.images[0]?.image_url ||
         null,
       gallery: p.images.map((img) => img.image_url),
-      variants: p.variants.map((v) => {
-        // ✅ Calculate discount
-        const discount =
-          v.price > 0
-            ? Math.round(((v.price - v.selling_price) / v.price) * 100)
-            : 0;
-
-        return {
-          id: v.id,
-          sku: v.sku,
-          price: Number(v.price),
-          selling_price: Number(v.selling_price),
-          shipping_cost: Number(v.shipping_cost),
-          stock: v.stock,
-          is_default: v.is_default,
-          discount, // ✅ Added discount field
-          attributes: v.attributes.map((attr) => ({
-            attribute_id: attr.attribute.id,
-            attribute_name: attr.attribute.name,
-            value_id: attr.attribute_value.id,
-            value: attr.attribute_value.value,
-          })),
-          images: v.variant_images.map((vi) => ({
-            id: vi.id,
-            url: vi.image_url,
-            is_primary: vi.is_primary,
-          })),
-        };
-      }),
+      variants: p.variants.map((v) => ({
+        id: v.id,
+        sku: v.sku,
+        price: Number(v.price),
+        selling_price: Number(v.selling_price),
+        shipping_cost: Number(v.shipping_cost),
+        stock: v.stock,
+        is_default: v.is_default,
+        discount: v.price > 0
+          ? Math.round(((v.price - v.selling_price) / v.price) * 100)
+          : 0,
+        attributes: v.attributes.map((attr) => ({
+          attribute_id: attr.attribute.id,
+          attribute_name: attr.attribute.name,
+          value_id: attr.attribute_value.id,
+          value: attr.attribute_value.value,
+        })),
+        images: v.variant_images.map((vi) => ({
+          id: vi.id,
+          url: vi.image_url,
+          is_primary: vi.is_primary,
+        })),
+      })),
     }));
-
-    const totalPages = Math.ceil(count / limit);
 
     return appapiResponse.successResponseWithData(
       res,
@@ -797,14 +823,14 @@ export const getAppProductList = async (req, res) => {
         total: count,
         page,
         limit,
-        totalPages,
+        totalPages: Math.ceil(count / limit)
       }
     );
+
   } catch (error) {
     return appapiResponse.ErrorResponse(res, error.message);
   }
 };
-
 
 export const removeAttributeInProduct = async (req, res) => {
   try {
@@ -1441,6 +1467,107 @@ export const getProductDetails = async (req, res) => {
     return apiResponse.ErrorResponse(res, error.message);
   }
 };
+
+export const getAppProductFilter = async (req, res) => {
+  try {
+    const { category_id = null } = req.body;
+
+    /** ✅ Get only parent/main categories */
+    const mainCategories = await Category.findAll({
+      where: { is_delete: false, parent_id: null }, // Only main category
+      attributes: ["id", "name"],
+      order: [["name", "ASC"]],
+      raw: true
+    });
+
+    const categoryFilter = {
+      label_id: 1,
+      label_name: "Category",
+      values: mainCategories.map(c => ({
+        id: c.id,
+        name: c.name
+      }))
+    };
+
+    /** ✅ Collect only selected main category IDs */
+    let relatedCatIds = [];
+
+    if (Array.isArray(category_id) && category_id.length > 0) {
+      relatedCatIds = category_id;
+    } else if (category_id) {
+      relatedCatIds = [category_id];
+    } else {
+      relatedCatIds = mainCategories.map(c => c.id);
+    }
+
+    /** ✅ Find all products that match selected categories */
+    const productIds = (
+      await Product.findAll({
+        where: {
+          [Op.or]: [
+            { maincategory_id: relatedCatIds },
+            { category_id: relatedCatIds }    // keep for schema compatibility
+          ]
+        },
+        attributes: ["id"],
+        raw: true
+      })
+    ).map(p => p.id);
+
+    if (!productIds.length) {
+      return appapiResponse.successResponseWithData(res, "Filters loaded", {
+        all_filters: [categoryFilter]
+      });
+    }
+
+    /** ✅ Load attributes for these products */
+    const attrs = await Attribute.findAll({
+      where: { is_deleted: false },
+      attributes: ["id", "name"],
+      include: [
+        {
+          model: AttributeValue,
+          as: "values",
+          where: { is_deleted: false },
+          required: true,
+          attributes: ["id", "value"],
+          include: [
+            {
+              model: ProductVariantAttributeValue,
+              as: "product_variant_values",
+              required: true,
+              where: { product_id: productIds },
+              attributes: []
+            }
+          ]
+        }
+      ],
+      order: [["name", "ASC"]],
+      raw: false
+    });
+
+    const attributeFilters = attrs.map(attr => ({
+      label_id: attr.id,
+      label_name: attr.name,
+      values: attr.values
+        .map(v => ({ id: v.id, name: v.value }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    }));
+
+    return appapiResponse.successResponseWithData(res, "Filters loaded", {
+      all_filters: [categoryFilter, ...attributeFilters]
+    });
+
+  } catch (err) {
+    console.error("🔥 Filter Error:", err);
+    return appapiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+
+
+
+
 
 
 

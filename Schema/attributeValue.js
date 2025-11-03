@@ -4,7 +4,7 @@ import Attribute from "./attribute.js";
 
 const AttributeValue = sequelize.define("AttributeValue", {
   id: {
-    type: DataTypes.BIGINT,
+    type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
