@@ -79,6 +79,7 @@ export const getSellerOrders = async (req, res) => {
                   as: "images",
                   required: false,
                   attributes: ["image_url"],
+                  where: { is_deleted: false },
                 },
                 {
                   model: ProductVariant,
@@ -226,6 +227,7 @@ export const getSellerOrderById = async (req, res) => {
                   as: "images",
                   required: false,
                   attributes: ["image_url"],
+                   where: { is_deleted: false },
                 },
                 {
                   model: ProductVariant,

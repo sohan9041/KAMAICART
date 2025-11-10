@@ -28,7 +28,7 @@ import {
 
 import { optionalAuthHeader,verifyUser,cookiesVerifyUser,optionalAuthCookie } from "../Middleware/verifyAuthMiddleware.js";
 import { uploadProductImages } from "../Middleware/imageUploadMiddleware.js";
-import { appbuyNowAddToCart, buyNowAddToCart, getSortOptions } from "../Controllers/cartController.js";
+import { getSortOptions } from "../Controllers/cartController.js";
 
 const router = express.Router();
 

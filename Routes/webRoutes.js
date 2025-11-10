@@ -10,7 +10,7 @@ import { getMegaMenu } from "../Controllers/categoryController.js";
 import { getOfferListForWeb } from "../Controllers/offerController.js";
 import { cancelOrder, getOrderDetails, getOrderHistory, placeOrder, reorder } from "../Controllers/orderController.js";
 import { getAllPaymentMethodsweb } from "../Controllers/paymentMethodController.js";
-import { getProductDetails, getRandomProducts, getSimilarProducts, getTopRatedProducts, getWebAllProducts } from "../Controllers/productController.js";
+import { getProductDetails, getProductFilters, getRandomProducts, getSimilarProducts, getTopRatedProducts, getWebAllProducts } from "../Controllers/productController.js";
 import { getAllRolesforWeb } from "../Controllers/roleController.js";
 import { getWhyChooseListForWeb } from "../Controllers/whyChooseController.js";
 import { addToWishlistweb, getWishlistweb, removeFromWishlistweb } from "../Controllers/wishlistController.js";
@@ -61,6 +61,8 @@ router.get("/orderhistory", cookiesVerifyUser, getOrderHistory);
 router.get("/order/:id", cookiesVerifyUser, getOrderDetails);
 router.post("/ordercancel", cookiesVerifyUser, cancelOrder);
 router.post("/reorder", cookiesVerifyUser, reorder);
+router.post("/filter",getProductFilters);
+
 
 router.get("/paymentMethod",cookiesVerifyUser, getAllPaymentMethodsweb);
 

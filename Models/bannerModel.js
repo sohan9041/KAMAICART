@@ -7,7 +7,7 @@ export const saveBanner = async (data) => {
 
 // ✅ Get All
 export const getAllBanners = async () => {
-  return Banner.findAll();
+  return Banner.findAll({ where: { is_delete: false } });
 };
 
 // ✅ Get Not Deleted

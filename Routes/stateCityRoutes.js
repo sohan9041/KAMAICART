@@ -6,8 +6,7 @@ import {
   appbuyNowAddToCart,
   appgetCart,
   appremoveFromCart,
-  appupdateCartQuantity,
-  getSortOptions
+  appupdateCartQuantity
 } from "../Controllers/cartController.js";
 import { appplaceOrder, appgetOrderHistory, appgetOrderDetails,appcancelOrder,appreorder } from "../Controllers/orderController.js";
 

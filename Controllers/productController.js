@@ -228,6 +228,7 @@ export const getAllProducts = async (req, res) => {
         {
           model: ProductImage,
           as: "images",
+          where: { is_deleted: false },
           attributes: { exclude: ["createdAt", "updatedAt", "is_deleted"] },
         },
         {
@@ -308,6 +309,7 @@ export const getProductById = async (req, res) => {
       include: [
         {
           model: ProductImage,
+          where: { is_deleted: false },
           as: "images",
           attributes: { exclude: ["createdAt", "updatedAt", "is_deleted"] },
         },
@@ -398,14 +400,15 @@ export const updateProductById = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      variants,
-      image_ids_to_delete,
+      variants,      
       stock,
       shipping_cost,
       selling_price,
       price,
       ...productData
     } = req.body;
+
+    let { image_ids_to_delete } = req.body;
 
     // 1️⃣ Find product
     const product = await Product.findByPk(id, { transaction: t });
@@ -417,13 +420,32 @@ export const updateProductById = async (req, res) => {
     // 2️⃣ Update product info
     await product.update(productData, { transaction: t });
 
-    // 3️⃣ Delete selected images
-    if (Array.isArray(image_ids_to_delete) && image_ids_to_delete.length > 0) {
-      await ProductImage.destroy({
-        where: { id: image_ids_to_delete, product_id: id },
-        transaction: t,
-      });
+   // 3️⃣ Delete selected images
+   console.log(Array.isArray(image_ids_to_delete) && image_ids_to_delete.length > 0);
+   console.log(Array.isArray(image_ids_to_delete));
+   console.log(image_ids_to_delete.length > 0)
+   console.log(image_ids_to_delete.length);
+   if (typeof image_ids_to_delete === "string") {
+  try {
+    image_ids_to_delete = JSON.parse(image_ids_to_delete);
+  } catch (err) {
+    console.error("Failed to parse image_ids_to_delete:", err);
+    image_ids_to_delete = [];
+  }
+}
+if (Array.isArray(image_ids_to_delete) && image_ids_to_delete.length > 0) {
+  const imageIds = image_ids_to_delete.map((i) => Number(i));
+  const [updatedCount] = await ProductImage.update(
+    { is_deleted: true },
+    {
+      where: { id: imageIds, product_id: Number(id) },
+      transaction: t,
     }
+  );
+
+  console.log("🗑️ Soft deleted images:", updatedCount);
+}
+
 
     // 4️⃣ Add new product-level images (only files)
     const productFiles = (req.files || []).filter(
@@ -592,7 +614,7 @@ export const updateProductById = async (req, res) => {
     const updatedProduct = await Product.findOne({
       where: { id },
       include: [
-        { model: ProductImage, as: "images" },
+        { model: ProductImage, as: "images" , where: { is_deleted: false } },
         {
           model: ProductVariant,
           as: "variants",
@@ -613,7 +635,7 @@ export const updateProductById = async (req, res) => {
                 },
               ],
             },
-            { model: ProductImage, as: "variant_images" },
+            { model: ProductImage, as: "variant_images", where: { is_deleted: false } },
           ],
         },
       ],
@@ -1563,6 +1585,122 @@ export const getAppProductFilter = async (req, res) => {
     return appapiResponse.ErrorResponse(res, err.message);
   }
 };
+
+export const getProductFilters = async (req, res) => {
+  try {
+    const { category_id = null } = req.body;
+
+    /** ✅ Get only parent/main categories */
+    const mainCategories = await Category.findAll({
+      where: { is_delete: false, parent_id: null },
+      attributes: ["id", "name"],
+      order: [["name", "ASC"]],
+      raw: true
+    });
+
+    const categoryFilter = {
+      label_id: 1,
+      label_name: "Category",
+      values: mainCategories.map(c => ({
+        id: c.id,
+        name: c.name
+      }))
+    };
+
+    /** ✅ Collect selected or default category IDs */
+    let relatedCatIds = [];
+
+    if (Array.isArray(category_id) && category_id.length > 0) {
+      relatedCatIds = category_id;
+    } else if (category_id) {
+      relatedCatIds = [category_id];
+    } else {
+      relatedCatIds = mainCategories.map(c => c.id);
+    }
+
+    /** ✅ Find all product IDs that match selected categories */
+    const productIds = (
+      await Product.findAll({
+        where: {
+          [Op.or]: [
+            { maincategory_id: relatedCatIds },
+            { category_id: relatedCatIds }
+          ]
+        },
+        attributes: ["id"],
+        raw: true
+      })
+    ).map(p => p.id);
+
+    /** ✅ If no matching products, still return category + sort filters */
+    if (!productIds.length) {
+      const sortOptions = await SortOption.findAll({
+        where: { status: 1 },
+        order: [["sort_order", "ASC"]],
+        attributes: ["id", "code", "name"],
+        raw: true
+      });
+
+      return apiResponse.successResponseWithData(res, "Filters loaded", {
+        all_filters: [categoryFilter],
+        sort_options: sortOptions
+      });
+    }
+
+    /** ✅ Load attribute filters dynamically */
+    const attrs = await Attribute.findAll({
+      where: { is_deleted: false },
+      attributes: ["id", "name"],
+      include: [
+        {
+          model: AttributeValue,
+          as: "values",
+          where: { is_deleted: false },
+          required: true,
+          attributes: ["id", "value"],
+          include: [
+            {
+              model: ProductVariantAttributeValue,
+              as: "product_variant_values",
+              required: true,
+              where: { product_id: productIds },
+              attributes: []
+            }
+          ]
+        }
+      ],
+      order: [["name", "ASC"]],
+      raw: false
+    });
+
+    const attributeFilters = attrs.map(attr => ({
+      label_id: attr.id,
+      label_name: attr.name,
+      values: attr.values
+        .map(v => ({ id: v.id, name: v.value }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    }));
+
+    /** ✅ Get sort options */
+    const sortOptions = await SortOption.findAll({
+      where: { status: 1 },
+      order: [["sort_order", "ASC"]],
+      attributes: ["id", "code", "name"],
+      raw: true
+    });
+
+    /** ✅ Return everything in one JSON */
+    return apiResponse.successResponseWithData(res, "Filters loaded successfully", {
+      all_filters: [categoryFilter, ...attributeFilters],
+      sort_options: sortOptions
+    });
+
+  } catch (err) {
+    console.error("🔥 Combined Filter Error:", err);
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
 
 
 

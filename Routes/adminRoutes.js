@@ -10,8 +10,23 @@ import {
 } from "../Controllers/adminController.js";
 import { cookiesVerifyUser } from "../Middleware/verifyAuthMiddleware.js";
 
+import {
+  getAllSortOptions,
+  getSortOptionById,
+  deleteSortOption,
+  addSortOption,
+  editSortOption,
+} from "../Controllers/sortOptionController.js";
+
 
 const router = express.Router();
+
+router.post("/sortOption",cookiesVerifyUser, addSortOption);
+router.get("/sortOption",cookiesVerifyUser, getAllSortOptions);
+router.get("/sortOption/:id",cookiesVerifyUser, getSortOptionById);
+router.delete("/sortOption/:id",cookiesVerifyUser, deleteSortOption);
+router.put("/sortOption/:id",cookiesVerifyUser, editSortOption);
+
 
 router.post("/",cookiesVerifyUser, createAdmin);
 router.get("/",cookiesVerifyUser, getAdminList);
