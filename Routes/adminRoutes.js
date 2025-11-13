@@ -6,7 +6,8 @@ import {
   updateAdmin,
   deleteAdmin,
   login,
-  logout
+  logout,
+  sendNotification
 } from "../Controllers/adminController.js";
 import { cookiesVerifyUser } from "../Middleware/verifyAuthMiddleware.js";
 
@@ -17,6 +18,7 @@ import {
   addSortOption,
   editSortOption,
 } from "../Controllers/sortOptionController.js";
+import { getSellerOrdersByAdmin } from "../Controllers/sellerOrderController.js";
 
 
 const router = express.Router();
@@ -26,6 +28,11 @@ router.get("/sortOption",cookiesVerifyUser, getAllSortOptions);
 router.get("/sortOption/:id",cookiesVerifyUser, getSortOptionById);
 router.delete("/sortOption/:id",cookiesVerifyUser, deleteSortOption);
 router.put("/sortOption/:id",cookiesVerifyUser, editSortOption);
+router.post("/send-notification", sendNotification);
+
+router.get("/getSellerOrdersByAdmin",cookiesVerifyUser, getSellerOrdersByAdmin);
+
+
 
 
 router.post("/",cookiesVerifyUser, createAdmin);

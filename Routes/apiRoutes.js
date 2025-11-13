@@ -1,13 +1,17 @@
 import express from "express";
 import { AppSignup, AppSignin,AppLogout,AppProfile,uploadUserImage,AppUpdateProfile,
-  forgotPassword,verifyOtp,AppresetPassword,AppupdatePassword
+  forgotPassword,verifyOtp,AppresetPassword,AppupdatePassword,
+  AppRefreshToken
  } from "../Controllers/authController.js";
+import { SaveFirebaseToken } from "../Controllers/firebaseTokenController.js";
 import { verifyUser } from "../Middleware/verifyAuthMiddleware.js";
 import { uploadProfileImage } from "../Middleware/imageUploadMiddleware.js";
 export const router = express.Router();
 
 router.post("/signup", AppSignup);
 router.post("/signin", AppSignin);
+router.post("/refresh", AppRefreshToken);
+router.post("/save-firebase-token", verifyUser, SaveFirebaseToken);
 router.post("/logout",verifyUser, AppLogout);
 router.get("/me",verifyUser, AppProfile);
 router.post(

@@ -18,6 +18,9 @@ import {
   setAuthCookies,
   setAccessTokenCookie,
 } from "../Utils/tokens.js";
+import {
+  deleteFirebaseToken,
+} from "../Models/FirebaseModel.js";
 import { saveRefreshTokenRecord } from "../Helper/tokenHelper.js";
 import { Admin } from "../Models/admin.js";
 import { Role } from "../Schema/role.js";
@@ -189,6 +192,76 @@ export const RefreshToken = async (req, res) => {
     );
   } catch (err) {
     return apiResponse.ErrorResponse(res, err.message);
+  }
+};
+
+export const AppRefreshToken = async (req, res) => {
+  try {
+    // ✅ Read refresh token from cookies instead of headers
+    const refreshToken = req.header("RefreshToken")?.split(" ")[1];
+
+    if (!refreshToken) {
+      return appapiResponse.unauthorizedResponse(res, "Refresh token is required");
+    }
+
+    // Verify signature & get payload
+    jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET,
+      async (err, decoded) => {
+        if (err)
+          return appapiResponse.ErrorResponse(
+            res,
+            "Invalid or expired refresh token"
+          );
+
+        // Make sure token exists in DB and not revoked
+        const tokenRecord = await Token.findOne({
+          where: { token: refreshToken },
+        });
+        if (!tokenRecord || tokenRecord.revoked) {
+          return appapiResponse.ErrorResponse(
+            res,
+            "Refresh token revoked or not found"
+          );
+        }
+
+        // Optional: check expiry server-side
+        if (
+          tokenRecord.expires_at &&
+          new Date(tokenRecord.expires_at) <= new Date()
+        ) {
+          tokenRecord.revoked = true;
+          await tokenRecord.save();
+          return appapiResponse.ErrorResponse(res, "Refresh token expired");
+        }
+
+        // fetch user
+        const user = await User.findByPk(decoded.id);
+
+        // ✅ If neither user nor admin exists → return not found
+        if (!user) {
+          return appapiResponse.notFoundResponse(res, "User not found");
+        }
+
+        // ✅ Determine who is logged in
+        const account = user;
+
+        // ✅ Generate new access token
+        const newAccessToken = signAccessToken(account);
+
+        // ✅ Reset cookies with new tokens
+        setAccessTokenCookie(res, newAccessToken);
+       
+
+        return appapiResponse.successResponseWithData(res, "Token refreshed", {
+          accessToken: newAccessToken,
+          refreshToken: refreshToken,
+        });
+      }
+    );
+  } catch (err) {
+    return appapiResponse.ErrorResponse(res, err.message);
   }
 };
 
@@ -390,10 +463,13 @@ export const getCustomers = async (req, res) => {
     );
   }
 };
+
 // ✅ Signup (Direct login after register)
 export const AppSignup = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
+
+    // Validate fields
     if (!name || !email || !phone || !password) {
       return appapiResponse.validationErrorWithData(
         res,
@@ -401,7 +477,8 @@ export const AppSignup = async (req, res) => {
         { name, email, phone }
       );
     }
-    // check duplicate user
+
+    // Check if email or phone already exists
     const existingUser = await findUserByEmailorPhoneByApp(email, phone);
     if (existingUser) {
       return appapiResponse.validationErrorWithData(
@@ -410,18 +487,26 @@ export const AppSignup = async (req, res) => {
         { email, phone }
       );
     }
-    // hash password
+
+    // Hash password
     const hashed = await bcrypt.hash(password, 10);
-    // register user in DB
+
+    // Register user in DB
     const user = await AppRegister(name, email, phone, hashed, 4);
-    // generate JWT token immediately after signup
-    const token = jwt.sign(
-      { id: user.id, name: user.name, email: user.email, role: user.role_id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+
+    // Generate tokens (Access + Refresh)
+    const { accessToken, refreshToken } = generateTokens(user);
+
+    // Save refresh token in DB (for later validation or logout)
+    await saveRefreshTokenRecord({ user, tokenValue: refreshToken, req });
+
+    // Set cookies (optional, if your signin does this too)
+    setAuthCookies(res, accessToken, refreshToken);
+
+    // Send response
     return appapiResponse.successResponseWithData(res, "Signup successful", {
-      token,
+      token: accessToken,
+      refreshToken,
       user: {
         id: user.id,
         name: user.name,
@@ -448,15 +533,31 @@ export const AppSignin = async (req, res) => {
         "Password incorrect",
         null
       );
-    const token = jwt.sign(
-      { id: user.id, name: user.name, email: user.email, role: user.role_id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    // const token = jwt.sign(
+    //   { id: user.id, name: user.name, email: user.email, role: user.role_id },
+    //   process.env.JWT_SECRET,
+    //   { expiresIn: "7d" }
+    // );
+    // return appapiResponse.successResponseWithData(res, "Login successful", {
+    //   token,
+    //   user: {
+    //     id: user.id,
+    //     name: user.name,
+    //     email: user.email,
+    //     phone: user.phoneno,
+    //     role: user.role_id,
+    //     profileImage: user.profileImage,
+    //   },
+    // });
+    const { accessToken, refreshToken } = generateTokens(user);
+    await saveRefreshTokenRecord({ user, tokenValue: refreshToken, req });
+    setAuthCookies(res, accessToken, refreshToken);
+
     return appapiResponse.successResponseWithData(res, "Login successful", {
-      token,
+      token:accessToken,
+      refreshToken,
       user: {
-        id: user.id,
+       id: user.id,
         name: user.name,
         email: user.email,
         phone: user.phoneno,
@@ -469,12 +570,40 @@ export const AppSignin = async (req, res) => {
   }
 };
 // ✅ Logout
-export const AppLogout = (req, res) => {
-  return appapiResponse.successResponseWithData(
-    res,
-    "Logged out successfully",
-    null
-  );
+export const AppLogout = async (req, res) => {
+  try {
+    const userId = req.user?.id; // assuming authentication middleware sets req.user
+    const device_id = req.body?.device_id; // get device_id from request body
+    if (userId) {
+      // 🔥 Revoke all refresh tokens of this user from DB
+      await Token.update(
+        { revoked: true },
+        { where: { user_id: userId } }
+      );
+      await deleteFirebaseToken(userId,device_id);
+    }
+
+    // 🔥 Clear both access & refresh cookies
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+    });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+    });
+
+    return appapiResponse.successResponseWithData(
+      res,
+      "Logged out successfully. All tokens cleared.",
+      null
+    );
+  } catch (error) {
+    console.error("Logout error:", error);
+    return appapiResponse.ErrorResponse(res, "Failed to logout");
+  }
 };
 // ✅ Profile
 export const AppProfile = async (req, res) => {

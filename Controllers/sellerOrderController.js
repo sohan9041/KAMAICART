@@ -189,6 +189,182 @@ export const getSellerOrders = async (req, res) => {
   }
 };
 
+export const getSellerOrdersByAdmin = async (req, res) => {
+  try {
+    const sellerId = req.query.sellerId; // ✅ sellerId comes from query param
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    if (!sellerId) {
+      return apiResponse.ErrorResponse(res, "Seller ID is required");
+    }
+
+    const { search, status, fromDate, toDate } = req.query;
+
+    // 🔹 Base filter
+    const orderWhere = { seller_id: sellerId };
+
+    if (status) orderWhere.status = status;
+
+    if (fromDate || toDate) {
+      orderWhere.createdAt = {};
+      if (fromDate) orderWhere.createdAt[Op.gte] = new Date(fromDate);
+      if (toDate) orderWhere.createdAt[Op.lte] = new Date(toDate);
+    }
+
+    // 🔹 Search filter
+    let userIncludeWhere = undefined;
+    if (search) {
+      if (!isNaN(search)) {
+        // Numeric → Order ID
+        orderWhere.id = search;
+      } else {
+        // Text → User name / email / phone
+        userIncludeWhere = {
+          [Op.or]: [
+            { name: { [Op.iLike]: `%${search}%` } },
+            { email: { [Op.iLike]: `%${search}%` } },
+            { phoneno: { [Op.iLike]: `%${search}%` } },
+          ],
+        };
+      }
+    }
+
+    // 🔹 Fetch orders
+    const { count, rows: orders } = await Order.findAndCountAll({
+      where: orderWhere,
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "name", "email", "phoneno"],
+          required: !!userIncludeWhere,
+          where: userIncludeWhere,
+        },
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            {
+              model: Product,
+              as: "product",
+              attributes: ["id", "name", "brand"],
+              include: [
+                {
+                  model: ProductImage,
+                  as: "images",
+                  required: false,
+                  attributes: ["image_url"],
+                  where: { is_deleted: false },
+                },
+                {
+                  model: ProductVariant,
+                  as: "variants",
+                  required: false,
+                  attributes: ["id"],
+                  include: [
+                    {
+                      model: ProductVariantAttributeValue,
+                      as: "attributes",
+                      include: [
+                        {
+                          model: Attribute,
+                          as: "attribute",
+                          attributes: ["name"],
+                        },
+                        {
+                          model: AttributeValue,
+                          as: "attribute_value",
+                          attributes: ["value"],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: UserAddress,
+          as: "address",
+        },
+        {
+          model: PaymentMethod,
+          as: "payment_method",
+          attributes: ["name"],
+        },
+      ],
+      limit,
+      offset,
+      distinct: true,
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (!orders.length) {
+      return apiResponse.successResponseWithData(res, "No orders found", []);
+    }
+
+    // 🔹 Format response
+    const formattedOrders = orders.map((order) => {
+      const items = order.items.map((item) => {
+        const product = item.product || {};
+        const firstImage = product.images?.[0]?.image_url || null;
+        const variantAttributes = product.variants?.[0]?.attributes || [];
+        const variantValue =
+          variantAttributes.map((attr) => attr.attribute_value?.value).join(", ") || null;
+
+        return {
+          id: item.id,
+          productName: product.name,
+          productImage: firstImage,
+          variant: variantValue,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.total,
+        };
+      });
+
+      return {
+        id: order.id,
+        orderNumber: order.order_number || `ORD-${order.id}`,
+        customer: {
+          name: order.user?.name || "",
+          email: order.user?.email || "",
+          phone: order.user?.phoneno || "",
+        },
+        items,
+        itemsCount: items.length,
+        totalAmount: order.total_amount || 0,
+        orderDate: order.createdAt,
+        orderStatus: order.status,
+        paymentStatus: order.payment_status || "paid",
+        paymentMethod: order.payment_method?.name || "",
+        shippingAddress: order.address || {},
+        subtotal: order.subtotal || 0,
+        shippingCharge: order.shipping_charge || 0,
+        taxAmount: order.tax_amount || 0,
+        grandTotal: order.grand_total || 0,
+      };
+    });
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Seller orders fetched successfully",
+      formattedOrders,
+      {
+        totalOrders: count,
+        currentPage: page,
+        totalPages: Math.ceil(count / limit),
+        pageSize: limit,
+      }
+    );
+  } catch (error) {
+    console.error("Error fetching seller orders (admin):", error);
+    return apiResponse.ErrorResponse(res, error.message);
+  }
+};
 
 
 export const getSellerOrderById = async (req, res) => {

@@ -11,14 +11,14 @@ export const verifyUser = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (err) {
-    return res.status(200).json({ status: false, message: "Invalid token" });
+    return res.status(401).json({ status: false, message: "Invalid token" });
   }
 };
 
 // 🟢 Optional auth via Authorization header
 export const optionalAuthHeader = (req, res, next) => {
   try {
-    const token = req.headers["authorization"]?.split(" ")[1];
+    const token = req.headers["Authorization"]?.split(" ")[1];
     if (!token) {
       req.user = null; // guest
       return next();

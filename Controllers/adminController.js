@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { Op } from "sequelize";
 import { Admin } from "../Models/admin.js";
 import apiResponse from "../Helper/apiResponse.js";
+import FirebaseHelper from "../Helper/firebaseHelper.js";
 import Token from "../Schema/token.js";
 import {
   generateTokens,
@@ -13,6 +14,35 @@ import {
 import {
   saveRefreshTokenRecord
 } from "../Helper/tokenHelper.js";
+
+export const sendNotification = async (req, res) => {
+  try {
+    const { token, title, body, data } = req.body;
+
+    if (!token) {
+      return apiResponse.validationErrorWithData(res, "FCM token is required", null);
+    }
+
+    const payload = {
+      title: title || "Notification",
+      body: body || "You have a new message",
+    };
+
+    const result = await FirebaseHelper.sendNotification(token, payload, data);
+
+    if (result.success) {
+      return apiResponse.successResponseWithData(
+        res,
+        "Notification sent successfully",
+        result.response
+      );
+    } else {
+      return apiResponse.ErrorResponse(res, result.error);
+    }
+  } catch (err) {
+    return apiResponse.ErrorResponse(res, err.message);
+  }
+};
 
 // 🔹 Create Admin
 export const createAdmin = async (req, res) => {
